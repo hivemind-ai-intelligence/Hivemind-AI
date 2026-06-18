@@ -85,12 +85,18 @@ export default function Pricing() {
                   ))}
                 </div>
                 
-                <Button 
-                  variant={tier.recommended ? "default" : "outline"}
-                  className="w-full rounded-xl py-6 font-semibold"
-                >
-                  {typeof price === 'string' ? "Contact Us" : "Get Started"}
-                </Button>
+                <Button
+  variant={tier.recommended ? "default" : "outline"}
+  className="w-full rounded-xl py-6 font-semibold transition-all duration-300 active:scale-95 active:opacity-80 hover:scale-105 hover:shadow-2xl"
+  onClick={() => {
+    const contactSection = document.getElementById("contact");
+    contactSection?.scrollIntoView({
+      behavior: "smooth"
+    });
+  }}
+>
+  {typeof price === "string" ? "Contact Us" : "Get Started"}
+</Button>
               </motion.div>
             )
           })}

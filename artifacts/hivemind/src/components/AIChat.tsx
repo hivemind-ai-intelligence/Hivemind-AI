@@ -155,7 +155,7 @@ export default function AIChat() {
               <div className="relative">
                 <div className="absolute inset-0 rounded-full animate-ping bg-primary/20"></div>
                 <div className="w-10 h-10 rounded-full bg-foreground border border-background flex items-center justify-center relative z-10 text-background">
-                  <Bot className="w-5 h-5" />
+                  <span className="text-lg font-bold">⬢</span>
                 </div>
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
               </div>
@@ -207,7 +207,13 @@ export default function AIChat() {
                       ? "bg-foreground text-background border-foreground"
                       : "bg-card border-border text-foreground"
                   }`}>
-                    {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                    {msg.role === "user" ? (
+  <User className="w-4 h-4" />
+) : (
+  <div className="w-6 h-6 flex items-center justify-center rounded-md border border-slate-400 bg-black text-slate-300 shadow-[0_0_15px_rgba(192,192,192,0.4)]">
+  ⬢
+</div>
+)} 
                   </div>
                   <div className={`p-3 text-sm rounded-2xl ${
                     msg.role === "user"

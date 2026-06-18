@@ -7,6 +7,7 @@ import Marquee from "@/components/Marquee";
 import Services from "@/components/Services";
 import Projects from "@/components/Projects";
 import Owner from "@/components/Owner";
+import worldmap from "@/components/worldmap";
 import Testimonials from "@/components/Testimonials";
 import Pricing from "@/components/Pricing";
 import EnquiryForm from "@/components/EnquiryForm";

@@ -53,6 +53,13 @@ export default function Owner() {
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           animate={{ rotateX: rotate.x, rotateY: rotate.y }}
+
+whileHover={{
+  scale: 1.02,
+  y: -8,
+}}
+          whileTap={{ scale: 0.98 }}
+          
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -61,10 +68,10 @@ export default function Owner() {
           style={{ transformStyle: "preserve-3d" }}
         >
           {/* Layered Glass Panels */}
-          <div className="relative w-full rounded-3xl overflow-hidden glass-panel border border-border p-8 md:p-12 shadow-2xl bg-card/80 backdrop-blur-xl group">
+          <div className="relative w-full rounded-3xl overflow-hidden glass-panel border border-border p-8 md:p-12 shadow-[0_25px_80px_rgba(0,0,0,0.45)] bg-card/80 backdrop-blur-xl group">
             
             {/* Animated Border */}
-            <div className="absolute inset-0 rounded-3xl pointer-events-none p-[1px] bg-gradient-to-r from-foreground/10 via-foreground/30 to-foreground/10 animate-[bg-spin_3s_linear_infinite] [mask-image:linear-gradient(black,black)] [mask-composite:exclude]" />
+            <div className="absolute inset-0 rounded-3xl pointer-events-none p-[3px] bg-gradient-to-r from-foreground/10 via-foreground/30 to-foreground/10 animate-[bg-spin_8s_linear_infinite] [mask-image:linear-gradient(black,black)] [mask-composite:exclude]" />
 
             <div className="grid md:grid-cols-[1fr_2fr] gap-12 items-start relative z-10" style={{ transform: "translateZ(20px)" }}>
               
@@ -96,14 +103,24 @@ export default function Owner() {
                     </div>
                   )}
                 </div>
+
+<div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs mb-3">
+  ● Founder Verified
+</div>
+
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs mb-3">
+  ✓ Hivemind AI
+</div>
                 
-                <h3 className="text-2xl font-bold text-foreground text-center">{data.founderName}</h3>
-                <p className="text-sm text-muted-foreground uppercase tracking-wider text-center mt-1">{data.founderTitle}</p>
+                <h3 className="text-3xl font-bold text-foreground text-center">{data.founderName}</h3>
+                <p className="text-sm text-muted-foreground font-medium text-center mt-1">
+  {data.founderTitle}
+</p>
               </div>
               
               {/* RIGHT SIDE: Content */}
               <div className="flex flex-col h-full">
-                <h2 className="text-2xl md:text-3xl font-serif italic text-foreground/90 mb-6 leading-tight">
+                <h2 className="text-lg md:text-xl font-serif italic text-foreground/90 mb-4 leading-relaxed">
                   "{data.founderTagline}"
                 </h2>
                 
