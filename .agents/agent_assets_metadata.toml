@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "Ye0Gn3DD4HYVsrCw7gnzi"
+uri = "file://artifacts/hivemind/public/avatar.png"
+type = "image"
+title = "Geometric dark tech avatar"

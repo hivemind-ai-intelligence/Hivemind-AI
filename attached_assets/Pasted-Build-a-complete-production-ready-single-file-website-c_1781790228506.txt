@@ -1,0 +1,337 @@
+Build a complete production-ready single-file website called "HiveMind".
+
+IMPORTANT:
+
+- Generate EVERYTHING inside ONE index.html file.
+- Include all HTML, CSS and JavaScript inside the same file.
+- No external frameworks.
+- No missing sections.
+- No placeholder buttons.
+- Every button must work.
+- Mobile responsive.
+- Premium UI/UX.
+- Smooth performance.
+
+BRAND IDENTITY
+
+Company Name: HiveMind
+
+Tagline:
+Humans. AI. One Mind.
+
+Theme:
+Ultra Premium Metallic Silver + Liquid Black
+
+Design Inspiration:
+Apple, OpenAI, Linear, Stripe, Tesla, Arc Browser
+
+Visual Style:
+
+- Metallic silver gradients
+- Liquid black surfaces
+- Glassmorphism
+- Soft reflections
+- Luxury technology aesthetic
+- No gaming style neon
+- No cheap cyberpunk look
+
+GLOBAL FEATURES
+
+- Dark Mode
+- Light Mode
+- Theme Switcher
+- Multi Language Support
+- Smooth Scroll
+- Infinite Scroll Feeling
+- Custom Cursor
+- Progress Bar
+- Loading Screen
+- Scroll Animations
+- Mouse Reactive Effects
+- Glass Reflection Effects
+- Magnetic Buttons
+- Premium Hover States
+- Liquid Transitions
+
+LOADING SCREEN
+
+Create a cinematic black hole animation.
+
+Sequence:
+HiveMind logo appears
+Black hole forms
+Metallic particles collapse inward
+Tagline appears
+Website loads smoothly
+
+HERO SECTION
+
+Full screen hero.
+
+Background:
+Interactive animated black hole.
+
+Elements:
+
+- HiveMind Logo
+- Tagline
+- Live AI Pulse Indicator
+- Main Headline
+
+Headline:
+Building The Future Between Humans And AI
+
+Subheadline:
+HiveMind creates websites, AI systems, automation tools and digital infrastructure for the next generation of creators and businesses.
+
+Buttons:
+
+- Start Project
+- Explore HiveMind
+
+Statistics:
+
+- Projects Completed
+- AI Systems Built
+- Clients Served
+- Uptime
+
+Animated counters required.
+
+AI CO-FOUNDER SECTION
+
+Create a premium section.
+
+Title:
+Meet The HiveMind AI
+
+Description:
+A digital co-founder available 24/7.
+
+Features:
+
+- Answers questions
+- Suggests solutions
+- Explains services
+- Helps visitors navigate
+
+Add:
+Working AI Chat UI
+
+Simulate intelligent replies using JavaScript.
+
+Suggested prompts:
+
+- What services do you offer?
+- Tell me about HiveMind
+- Website pricing
+- AI systems
+
+SERVICES SECTION
+
+Create premium glass cards.
+
+Services:
+
+1 Website Development
+2 Discord Bots
+3 AI Systems
+4 Automation
+5 Branding
+6 Logo Design
+7 Webhooks
+8 API Integrations
+9 Dashboard Development
+10 Portfolio Websites
+11 Business Websites
+12 Landing Pages
+13 AI Chatbots
+14 Custom Tools
+15 Community Management Systems
+
+Each card must contain:
+
+- Premium icon
+- Description
+- Features
+- Pricing
+- CTA button
+
+PROJECTS SECTION
+
+REAL PROJECTS
+
+1 NovaBot
+AI Discord Assistant
+
+2 OrionPanel
+Server Management Dashboard
+
+3 AtlasFlow
+Automation Platform
+
+4 EchoAI
+AI Community System
+
+5 PulseWeb
+Business Website Platform
+
+FUTURE PROJECTS
+
+1 HiveMind OS
+AI Operating System
+
+2 Neural Nexus
+Human-AI Collaboration Network
+
+3 HiveMind City
+Digital Ecosystem Platform
+
+Each project card must include:
+
+- Status
+- Description
+- Features
+- Timeline
+- Progress Meter
+- Premium icon
+
+BLACK HOLE SCROLL EFFECT
+
+As users scroll:
+
+- Black hole grows
+- Metallic particles move
+- Sections appear from center
+- Smooth liquid transition
+
+OWNER SECTION
+
+Premium owner profile card.
+
+Features:
+
+- Round Avatar
+- Metallic Border
+- Owner Name
+- Founder Title
+- Short Bio
+- Social Buttons
+- Contact Buttons
+
+Buttons:
+
+- Email
+- WhatsApp
+- Discord
+- LinkedIn
+
+Magnetic hover effects.
+
+TESTIMONIALS SECTION
+
+Add 6 testimonials.
+
+Animated slider.
+
+Glass cards.
+
+PRICING SECTION
+
+Starter
+Professional
+Business
+Enterprise
+
+Include:
+
+- Features
+- Pricing
+- Comparison
+- CTA Buttons
+
+ENQUIRY SECTION
+
+Fields:
+
+- Name
+- Email
+- Discord
+- Budget
+- Service
+- Message
+
+Validation required.
+
+CONTACT SECTION
+
+Include:
+
+- Email
+- WhatsApp
+- Discord
+- Location
+- Social Links
+
+ADMIN PANEL
+
+Password Protected.
+
+Editable:
+
+- Logo
+- Company Name
+- Tagline
+- Hero Content
+- Services
+- Prices
+- Projects
+- Testimonials
+- Owner Card
+- Contact Details
+- Colors
+- Images
+- Avatar
+
+Store data using localStorage.
+
+Changes must instantly update website.
+
+NAVBAR
+
+Floating liquid glass navbar.
+
+Effects:
+
+- Blur
+- Metallic reflection
+- Active section highlight
+
+FOOTER
+
+Premium enterprise footer.
+
+Include:
+
+- Navigation
+- Socials
+- Copyright
+- Branding
+
+ANIMATIONS
+
+Create:
+
+- Liquid transitions
+- Floating metallic particles
+- Black hole distortion effect
+- Glass reflections
+- Hover physics
+- Magnetic buttons
+- Counter animations
+
+FINAL REQUIREMENT
+
+The result must look like a company valued at billions of dollars.
+
+Output ONLY the final complete index.html file.
