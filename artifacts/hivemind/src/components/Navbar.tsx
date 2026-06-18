@@ -3,11 +3,13 @@ import { Menu, X, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { useAdminData } from "@/hooks/useAdminData";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { data } = useAdminData();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,16 +36,22 @@ export default function Navbar() {
         <div
           className={`flex items-center justify-between rounded-2xl transition-all duration-500 ${
             isScrolled
-              ? "glass-panel px-6 py-3 shadow-[0_4px_30px_rgba(0,0,0,0.5)]"
+              ? "glass-panel px-6 py-3 shadow-[0_4px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.5)]"
               : "bg-transparent px-2 py-2"
           }`}
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center transition-transform group-hover:scale-110">
-              <div className="w-3 h-3 bg-black rounded-full"></div>
-            </div>
-            <span className="font-bold text-lg tracking-wide hidden sm:block">HIVEMIND</span>
+            {data.logoDataUrl ? (
+              <img src={data.logoDataUrl} alt={data.brandName} className="h-8 object-contain transition-transform group-hover:scale-105" />
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center transition-transform group-hover:scale-110">
+                  <div className="w-3 h-3 bg-background rounded-full"></div>
+                </div>
+                <span className="font-bold text-lg tracking-wide hidden sm:block text-foreground">{data.brandName}</span>
+              </>
+            )}
           </Link>
 
           {/* Desktop Nav */}
@@ -64,7 +72,7 @@ export default function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full hidden sm:flex"
+              className="rounded-full hidden sm:flex text-foreground"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -73,7 +81,7 @@ export default function Navbar() {
             </Button>
             
             <a href="#contact" className="hidden sm:block">
-              <Button className="rounded-full bg-white text-black hover:bg-neutral-200 dark:bg-white dark:text-black dark:hover:bg-neutral-200">
+              <Button className="rounded-full bg-foreground text-background hover:bg-foreground/90">
                 Start Project
               </Button>
             </a>
@@ -82,7 +90,7 @@ export default function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="md:hidden text-foreground"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -94,31 +102,34 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 p-4 mt-2">
-          <div className="glass-panel rounded-2xl p-4 flex flex-col gap-4">
+          <div className="glass-panel rounded-2xl p-4 flex flex-col gap-4 bg-background/95 backdrop-blur-xl">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium p-2 rounded-lg hover:bg-white/5"
+                className="text-sm font-medium p-2 rounded-lg hover:bg-foreground/5 text-foreground"
               >
                 {link.name}
               </a>
             ))}
             <div className="h-px bg-border my-2"></div>
             <div className="flex items-center justify-between p-2">
-              <span className="text-sm font-medium">Theme</span>
+              <span className="text-sm font-medium text-foreground">Theme</span>
               <Button
                 variant="outline"
                 size="sm"
                 className="rounded-full"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                onClick={() => {
+                  setTheme(theme === "dark" ? "light" : "dark");
+                  setMobileMenuOpen(false);
+                }}
               >
                 {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
               </Button>
             </div>
             <a href="#contact" onClick={() => setMobileMenuOpen(false)}>
-              <Button className="w-full rounded-xl bg-white text-black hover:bg-neutral-200">
+              <Button className="w-full rounded-xl bg-foreground text-background hover:bg-foreground/90">
                 Start Project
               </Button>
             </a>

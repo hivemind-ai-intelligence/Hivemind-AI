@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Sparkles } from "lucide-react";
+import { Send, Bot, User, Sparkles, MessageSquare, DollarSign, Target, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const SUGGESTED_PROMPTS = [
-  "What services do you offer?",
-  "Tell me about HiveMind",
-  "Website pricing",
-  "AI systems"
+const MODES = [
+  { id: "general", label: "General", icon: MessageSquare, welcome: "Hello. I am the AI Core. How can I help you build the future today?" },
+  { id: "services", label: "Services", icon: Lightbulb, welcome: "I can recommend the perfect service package. Tell me what you're trying to build." },
+  { id: "pricing", label: "Pricing", icon: DollarSign, welcome: "Let's find the right tier for your budget. What features are most important to you?" },
+  { id: "lead", label: "Connect", icon: Target, welcome: "Ready to start? Please share your name and email, and I'll connect you with the team." },
 ];
 
 interface Message {
@@ -17,16 +17,19 @@ interface Message {
 }
 
 export default function AIChat() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "ai",
-      content: "Hello. I am the HiveMind AI, your digital co-founder available 24/7. How can I help you build the future today?"
-    }
-  ]);
+  const [activeMode, setActiveMode] = useState(MODES[0].id);
+  const [messages, setMessages] = useState<Record<string, Message[]>>({
+    [MODES[0].id]: [{ id: "1", role: "ai", content: MODES[0].welcome }],
+    [MODES[1].id]: [{ id: "1", role: "ai", content: MODES[1].welcome }],
+    [MODES[2].id]: [{ id: "1", role: "ai", content: MODES[2].welcome }],
+    [MODES[3].id]: [{ id: "1", role: "ai", content: MODES[3].welcome }],
+  });
+  
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const currentMessages = messages[activeMode] || [];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,123 +37,150 @@ export default function AIChat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [currentMessages, isTyping]);
 
-  const generateResponse = (input: string) => {
-    const lowerInput = input.toLowerCase();
+  const generateResponse = (input: string, mode: string) => {
+    const lower = input.toLowerCase();
     
-    if (lowerInput.includes("service") || lowerInput.includes("offer") || lowerInput.includes("build")) {
-      return "HiveMind builds websites, AI systems, automation tools, Discord bots, and complete digital infrastructure. We specialize in creating ultra-premium experiences for the next generation of creators and businesses. Would you like to hear more about a specific service?";
-    }
-    
-    if (lowerInput.includes("price") || lowerInput.includes("cost") || lowerInput.includes("pricing")) {
-      return "Our pricing is transparent and scales with your needs. We offer subscriptions starting at $49/mo for basic websites, $149/mo for professional setups, and custom enterprise packages. Individual services like standard websites start from $299. Shall I direct you to our full pricing section?";
-    }
-    
-    if (lowerInput.includes("about") || lowerInput.includes("hivemind") || lowerInput.includes("who")) {
-      return "HiveMind is a premium AI agency. Our philosophy is 'Humans. AI. One Mind.' We believe in bridging the gap between human creativity and artificial intelligence to build systems that feel alive. We are based worldwide, serving forward-thinking companies.";
+    if (mode === "lead") {
+      if (lower.includes("@") || lower.includes(".com")) {
+        localStorage.setItem("hivemind-leads", JSON.stringify([...JSON.parse(localStorage.getItem("hivemind-leads") || "[]"), input]));
+        return "Thank you! I've logged your contact info. The team will be in touch shortly.";
+      }
+      return "Please provide your email address so we can reach out.";
     }
 
-    if (lowerInput.includes("ai") || lowerInput.includes("system") || lowerInput.includes("automation")) {
-      return "We build bespoke AI systems, custom chatbots, and automation workflows. Whether you need a 24/7 customer support bot, a Discord community manager, or complex API integrations, we engineer solutions that save you time and money.";
+    if (mode === "pricing") {
+      if (lower.includes("cheap") || lower.includes("budget") || lower.includes("low")) {
+        return "Our Starter tier at $49/mo is perfect for tight budgets. It includes a basic website and standard analytics.";
+      }
+      return "We have Starter ($49/mo), Pro ($149/mo), and Business ($349/mo) tiers. Pro is our most popular. Which sounds right for you?";
     }
 
-    return "Fascinating. While I am a simulated intelligence for this demonstration, the real HiveMind team can build complex AI systems that understand context perfectly. Contact us to build your own custom AI solution.";
+    if (mode === "services") {
+      if (lower.includes("web") || lower.includes("site")) {
+        return "We build high-performance Next.js and React websites. They start at $299. Would you like a portfolio, business site, or web app?";
+      }
+      if (lower.includes("bot") || lower.includes("discord")) {
+        return "Our custom Discord bots handle moderation, leveling, and utilities. They start at $99. Tell me about your server.";
+      }
+      return "We offer Web Development, AI Systems, Automation, and Discord Bots. What's your biggest pain point right now?";
+    }
+
+    // General
+    if (lower.includes("service") || lower.includes("offer")) return "We build websites, AI systems, and automations. Try the 'Services' tab!";
+    if (lower.includes("price") || lower.includes("cost")) return "Try the 'Pricing' tab for detailed guidance, or check the Pricing section below.";
+    
+    return "Fascinating. Tell me more, or switch modes above for specific guidance.";
   };
 
-  const handleSend = (text: string) => {
-    if (!text.trim()) return;
+  const handleSend = () => {
+    if (!inputValue.trim()) return;
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: text
-    };
-
-    setMessages(prev => [...prev, userMsg]);
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: inputValue.trim() };
+    
+    setMessages(prev => ({
+      ...prev,
+      [activeMode]: [...(prev[activeMode] || []), userMsg]
+    }));
+    
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate network delay
     setTimeout(() => {
-      const aiResponse = generateResponse(text);
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "ai",
-        content: aiResponse
-      };
-      setMessages(prev => [...prev, aiMsg]);
+      const aiResponse = generateResponse(userMsg.content, activeMode);
+      const aiMsg: Message = { id: (Date.now() + 1).toString(), role: "ai", content: aiResponse };
+      
+      setMessages(prev => ({
+        ...prev,
+        [activeMode]: [...(prev[activeMode] || []), aiMsg]
+      }));
       setIsTyping(false);
-    }, 1500);
+    }, 800);
+  };
+
+  const clearChat = () => {
+    setMessages(prev => ({
+      ...prev,
+      [activeMode]: [{ id: Date.now().toString(), role: "ai", content: MODES.find(m => m.id === activeMode)?.welcome || "" }]
+    }));
   };
 
   return (
-    <section className="py-32 relative" id="ai-chat">
+    <section className="py-32 relative bg-card/30" id="ai-chat">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold mb-4 metallic-text"
-          >
-            Meet The HiveMind AI
-          </motion.h2>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-neutral-400 text-lg"
-          >
-            Your digital co-founder, available 24/7
-          </motion.p>
+        <div className="text-center mb-12">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 metallic-text">AI Co-Founder</h2>
+          <p className="text-muted-foreground text-lg">Select a mode and interact with our systems.</p>
         </div>
 
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-3xl mx-auto glass-panel rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+          className="max-w-2xl mx-auto glass-panel rounded-3xl overflow-hidden border border-border shadow-xl flex flex-col min-h-[600px] bg-background"
         >
-          {/* Header */}
-          <div className="p-4 border-b border-white/10 flex items-center gap-4 bg-white/5">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full animate-ping bg-green-500/20"></div>
-              <div className="w-10 h-10 rounded-full bg-neutral-900 border border-white/20 flex items-center justify-center relative z-10">
-                <Bot className="w-5 h-5 text-white" />
+          {/* Header & Tabs */}
+          <div className="p-4 border-b border-border bg-card">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full animate-ping bg-primary/20"></div>
+                <div className="w-10 h-10 rounded-full bg-foreground border border-background flex items-center justify-center relative z-10 text-background">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
               </div>
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>
+              <div>
+                <h3 className="font-semibold text-foreground">AI Core</h3>
+                <p className="text-xs text-green-500 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Online
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={clearChat} className="ml-auto text-xs">Clear</Button>
             </div>
-            <div>
-              <h3 className="font-semibold text-white">HiveMind Core</h3>
-              <p className="text-xs text-green-400 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Online and ready
-              </p>
+            
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+              {MODES.map(mode => {
+                const Icon = mode.icon;
+                const isActive = activeMode === mode.id;
+                return (
+                  <button
+                    key={mode.id}
+                    onClick={() => setActiveMode(mode.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                      isActive 
+                        ? "bg-foreground text-background" 
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" /> {mode.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           {/* Chat Area */}
-          <div className="h-[400px] overflow-y-auto p-6 flex flex-col gap-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-            <AnimatePresence>
-              {messages.map((msg) => (
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+            <AnimatePresence initial={false}>
+              {currentMessages.map((msg) => (
                 <motion.div 
                   key={msg.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex gap-4 max-w-[85%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                  className={`flex gap-3 max-w-[85%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
                 >
                   <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border ${
                     msg.role === "user" 
-                      ? "bg-white text-black border-white" 
-                      : "bg-neutral-900 border-white/20 text-white"
+                      ? "bg-foreground text-background border-foreground" 
+                      : "bg-card border-border text-foreground"
                   }`}>
                     {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </div>
-                  <div className={`p-4 rounded-2xl ${
+                  <div className={`p-3 text-sm rounded-2xl ${
                     msg.role === "user"
-                      ? "bg-white text-black rounded-tr-sm"
-                      : "glass-panel text-neutral-200 rounded-tl-sm"
+                      ? "bg-primary text-primary-foreground rounded-tr-sm"
+                      : "bg-muted text-foreground rounded-tl-sm border border-border"
                   }`}>
                     {msg.content}
                   </div>
@@ -162,15 +192,15 @@ export default function AIChat() {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex gap-4 max-w-[85%] mr-auto"
+                className="flex gap-3 max-w-[85%] mr-auto"
               >
-                <div className="w-8 h-8 rounded-full bg-neutral-900 border border-white/20 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-foreground" />
                 </div>
-                <div className="p-4 rounded-2xl glass-panel rounded-tl-sm flex items-center gap-1.5">
-                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.4 }} className="w-2 h-2 rounded-full bg-white/50" />
-                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.4, delay: 0.2 }} className="w-2 h-2 rounded-full bg-white/50" />
-                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.4, delay: 0.4 }} className="w-2 h-2 rounded-full bg-white/50" />
+                <div className="p-4 rounded-2xl bg-muted rounded-tl-sm flex items-center gap-1.5 border border-border">
+                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.4 }} className="w-2 h-2 rounded-full bg-foreground/50" />
+                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.4, delay: 0.2 }} className="w-2 h-2 rounded-full bg-foreground/50" />
+                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.4, delay: 0.4 }} className="w-2 h-2 rounded-full bg-foreground/50" />
                 </div>
               </motion.div>
             )}
@@ -178,33 +208,22 @@ export default function AIChat() {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 border-t border-white/10 bg-black/50">
-            <div className="flex flex-wrap gap-2 mb-4">
-              {SUGGESTED_PROMPTS.map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => handleSend(prompt)}
-                  className="text-xs px-3 py-1.5 rounded-full border border-white/10 text-neutral-400 hover:text-white hover:border-white/30 transition-colors bg-white/5"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
+          <div className="p-4 border-t border-border bg-card mt-auto shrink-0">
             <div className="relative flex items-center">
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend(inputValue)}
-                placeholder="Ask me anything..."
-                className="w-full bg-neutral-900/50 border border-white/10 rounded-xl py-3 pl-4 pr-12 text-white placeholder:text-neutral-500 focus:outline-none focus:border-white/30 transition-colors"
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder={`Chat in ${MODES.find(m=>m.id===activeMode)?.label} mode...`}
+                className="w-full bg-background border border-border rounded-xl py-3 pl-4 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground/30 transition-colors"
               />
               <Button 
                 size="icon"
                 variant="ghost"
-                onClick={() => handleSend(inputValue)}
+                onClick={handleSend}
                 disabled={!inputValue.trim() || isTyping}
-                className="absolute right-1 hover:bg-white/10 text-white"
+                className="absolute right-1 text-foreground hover:bg-muted"
               >
                 <Send className="w-4 h-4" />
               </Button>

@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
 import LoadingScreen from "@/components/LoadingScreen";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import AIChat from "@/components/AIChat";
+import Marquee from "@/components/Marquee";
 import Services from "@/components/Services";
 import Projects from "@/components/Projects";
 import Owner from "@/components/Owner";
@@ -13,7 +13,16 @@ import EnquiryForm from "@/components/EnquiryForm";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
-import AdminPanel from "@/components/AdminPanel";
+import { Loader2 } from "lucide-react";
+
+// Lazy load heavy components
+const AIChat = lazy(() => import("@/components/AIChat"));
+
+const FallbackSpinner = () => (
+  <div className="w-full h-[500px] flex items-center justify-center">
+    <Loader2 className="w-8 h-8 animate-spin text-foreground/50" />
+  </div>
+);
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -41,10 +50,10 @@ export default function Home() {
       {loading && <LoadingScreen onComplete={handleLoadingComplete} />}
       
       {!loading && (
-        <main className="bg-black text-white min-h-screen relative overflow-x-hidden font-sans selection:bg-white/30">
+        <main className="bg-background text-foreground min-h-screen relative overflow-x-hidden font-sans selection:bg-foreground/30">
           {/* Scroll Progress Bar */}
           <motion.div
-            className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-neutral-400 via-white to-neutral-400 z-50 origin-left"
+            className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-neutral-400 via-foreground to-neutral-400 z-50 origin-left"
             style={{ scaleX }}
           />
 
@@ -52,9 +61,12 @@ export default function Home() {
           <Navbar />
           
           <Hero />
+          <Marquee />
           
-          <div className="relative z-10 bg-black">
-            <AIChat />
+          <div className="relative z-10 bg-background">
+            <Suspense fallback={<FallbackSpinner />}>
+              <AIChat />
+            </Suspense>
             <Services />
             <Projects />
             <Owner />
@@ -65,7 +77,6 @@ export default function Home() {
           </div>
           
           <Footer />
-          <AdminPanel />
         </main>
       )}
     </>

@@ -44,24 +44,24 @@
 }
 
 :root {
-  --background: 0 0% 100%;
+  --background: 0 0% 97%;
   --foreground: 0 0% 5%;
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
-  --ring: 0 0% 5%;
-  --card: 0 0% 100%;
+  --border: 0 0% 85%;
+  --input: 0 0% 85%;
+  --ring: 215 25% 27%;
+  --card: 0 0% 94%;
   --card-foreground: 0 0% 5%;
-  --card-border: 0 0% 90%;
-  --popover: 0 0% 100%;
+  --card-border: 0 0% 85%;
+  --popover: 0 0% 94%;
   --popover-foreground: 0 0% 5%;
-  --popover-border: 0 0% 90%;
-  --primary: 0 0% 5%;
+  --popover-border: 0 0% 85%;
+  --primary: 215 25% 27%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 96%;
+  --secondary: 0 0% 90%;
   --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 96%;
+  --muted: 0 0% 90%;
   --muted-foreground: 0 0% 45%;
-  --accent: 0 0% 96%;
+  --accent: 0 0% 90%;
   --accent-foreground: 0 0% 9%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
@@ -108,19 +108,30 @@
 }
 
 .glass-panel {
-  background: rgba(10, 10, 10, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  @apply bg-white/5 dark:bg-black/40 backdrop-blur-md border border-black/10 dark:border-white/5;
 }
 
 .metallic-text {
-  background: linear-gradient(180deg, #ffffff 0%, #a8b2c4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  @apply bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent;
 }
 
 .metallic-border {
-  border: 1px solid rgba(168, 178, 196, 0.2);
+  @apply border border-black/10 dark:border-white/20;
 }
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-100%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(80px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(80px) rotate(-360deg); }
+}
+.animate-orbit {
+  animation: orbit 10s linear infinite;
+}
+

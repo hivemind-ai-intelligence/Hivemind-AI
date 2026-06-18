@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CheckCircle2 } from "lucide-react";
+import { useAdminData } from "@/hooks/useAdminData";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -34,6 +35,7 @@ const formSchema = z.object({
 
 export default function EnquiryForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { data } = useAdminData();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,7 +57,7 @@ export default function EnquiryForm() {
   }
 
   return (
-    <section className="py-32 relative" id="contact">
+    <section className="py-32 relative bg-card/30" id="contact">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
@@ -72,7 +74,7 @@ export default function EnquiryForm() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-neutral-400 text-lg"
+              className="text-muted-foreground text-lg"
             >
               Tell us about your vision. We'll bring it to reality.
             </motion.p>
@@ -82,15 +84,15 @@ export default function EnquiryForm() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="glass-panel rounded-3xl p-8 md:p-12 border border-white/10 relative overflow-hidden"
+            className="glass-panel rounded-3xl p-8 md:p-12 border border-border relative overflow-hidden bg-background"
           >
             {isSubmitted ? (
-              <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-8 animate-in fade-in duration-300">
-                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-6 text-green-400">
+              <div className="absolute inset-0 bg-background/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-8 animate-in fade-in duration-300">
+                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-6 text-green-500">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Request Received</h3>
-                <p className="text-neutral-400">The HiveMind team will analyze your requirements and contact you shortly.</p>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Request Received</h3>
+                <p className="text-muted-foreground">The {data.brandName} team will analyze your requirements and contact you shortly.</p>
               </div>
             ) : null}
 
@@ -102,11 +104,11 @@ export default function EnquiryForm() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-neutral-300">Name</FormLabel>
+                        <FormLabel className="text-foreground">Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="John Doe" className="bg-white/5 border-white/10 text-white focus-visible:ring-white/30 h-12" {...field} />
+                          <Input placeholder="John Doe" className="bg-card border-border text-foreground focus-visible:ring-ring h-12" {...field} />
                         </FormControl>
-                        <FormMessage className="text-red-400" />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -115,11 +117,11 @@ export default function EnquiryForm() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-neutral-300">Email</FormLabel>
+                        <FormLabel className="text-foreground">Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="john@example.com" className="bg-white/5 border-white/10 text-white focus-visible:ring-white/30 h-12" {...field} />
+                          <Input placeholder="john@example.com" className="bg-card border-border text-foreground focus-visible:ring-ring h-12" {...field} />
                         </FormControl>
-                        <FormMessage className="text-red-400" />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -131,11 +133,11 @@ export default function EnquiryForm() {
                     name="discord"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-neutral-300">Discord Username (Optional)</FormLabel>
+                        <FormLabel className="text-foreground">Discord Username (Optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="john#1234" className="bg-white/5 border-white/10 text-white focus-visible:ring-white/30 h-12" {...field} />
+                          <Input placeholder="john#1234" className="bg-card border-border text-foreground focus-visible:ring-ring h-12" {...field} />
                         </FormControl>
-                        <FormMessage className="text-red-400" />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -144,14 +146,14 @@ export default function EnquiryForm() {
                     name="budget"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-neutral-300">Budget Range</FormLabel>
+                        <FormLabel className="text-foreground">Budget Range</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger className="bg-white/5 border-white/10 text-white focus:ring-white/30 h-12">
+                            <SelectTrigger className="bg-card border-border text-foreground focus:ring-ring h-12">
                               <SelectValue placeholder="Select a budget" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent className="bg-neutral-900 border-white/10 text-white">
+                          <SelectContent>
                             <SelectItem value="under500">Under $500</SelectItem>
                             <SelectItem value="500-1k">$500 - $1,000</SelectItem>
                             <SelectItem value="1k-5k">$1,000 - $5,000</SelectItem>
@@ -159,7 +161,7 @@ export default function EnquiryForm() {
                             <SelectItem value="enterprise">Enterprise / Custom</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage className="text-red-400" />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -170,24 +172,21 @@ export default function EnquiryForm() {
                   name="service"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-neutral-300">Primary Service Needed</FormLabel>
+                      <FormLabel className="text-foreground">Primary Service Needed</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="bg-white/5 border-white/10 text-white focus:ring-white/30 h-12">
+                          <SelectTrigger className="bg-card border-border text-foreground focus:ring-ring h-12">
                             <SelectValue placeholder="What can we build for you?" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-neutral-900 border-white/10 text-white max-h-[300px]">
-                          <SelectItem value="website">Website Development</SelectItem>
-                          <SelectItem value="discord">Discord Bots</SelectItem>
-                          <SelectItem value="ai_system">AI Systems</SelectItem>
-                          <SelectItem value="automation">Automation</SelectItem>
-                          <SelectItem value="branding">Branding</SelectItem>
-                          <SelectItem value="dashboard">Dashboard Development</SelectItem>
+                        <SelectContent className="max-h-[300px]">
+                          {data.services.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                          ))}
                           <SelectItem value="other">Other / Not Sure</SelectItem>
                         </SelectContent>
                       </Select>
-                      <FormMessage className="text-red-400" />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -197,20 +196,20 @@ export default function EnquiryForm() {
                   name="message"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-neutral-300">Project Details</FormLabel>
+                      <FormLabel className="text-foreground">Project Details</FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Tell us about your project, goals, and timeline..." 
-                          className="bg-white/5 border-white/10 text-white focus-visible:ring-white/30 min-h-[150px] resize-none" 
+                          className="bg-card border-border text-foreground focus-visible:ring-ring min-h-[150px] resize-none" 
                           {...field} 
                         />
                       </FormControl>
-                      <FormMessage className="text-red-400" />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit" className="w-full h-14 bg-white text-black hover:bg-neutral-200 text-base font-semibold rounded-xl">
+                <Button type="submit" className="w-full h-14 text-base font-semibold rounded-xl">
                   Initialize Transmission
                 </Button>
               </form>

@@ -1,19 +1,26 @@
-import { Mail, MessageSquare, Phone, MapPin, Twitter, Github, Linkedin } from "lucide-react";
-import { useAdminData } from "@/context/AdminDataContext";
+import { Mail, MessageSquare, Phone, MapPin, Twitter, Github, Linkedin, Copy } from "lucide-react";
+import { useAdminData } from "@/hooks/useAdminData";
 import { useMagneticEffect } from "@/hooks/useMagneticEffect";
+import { toast } from "sonner";
 
 export default function Contact() {
   const { data } = useAdminData();
 
+  const handleCopyDiscord = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(data.contactDiscord);
+    toast.success("Discord tag copied to clipboard!");
+  };
+
   const contactMethods = [
-    { icon: Mail, title: "Email", value: data.contact.email, link: `mailto:${data.contact.email}` },
-    { icon: Phone, title: "WhatsApp", value: data.contact.whatsapp, link: `https://wa.me/${data.contact.whatsapp.replace(/\D/g,'')}` },
-    { icon: MessageSquare, title: "Discord", value: data.contact.discord, link: `https://discord.com/users/${data.contact.discord}` },
-    { icon: MapPin, title: "Location", value: "Remote — Worldwide", link: "#" },
+    { icon: Mail, title: "Email", value: data.contactEmail, link: `mailto:${data.contactEmail}` },
+    { icon: Phone, title: "WhatsApp", value: data.contactWhatsApp, link: `https://wa.me/${data.contactWhatsApp.replace(/\D/g,'')}` },
+    { icon: MessageSquare, title: "Discord", value: data.contactDiscord, link: "#", onClick: handleCopyDiscord },
+    { icon: MapPin, title: "Location", value: data.contactLocation, link: "#" },
   ];
 
   return (
-    <section className="py-24 border-t border-white/5">
+    <section className="py-24 border-t border-border bg-background">
       <div className="container mx-auto px-4">
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
@@ -23,13 +30,14 @@ export default function Contact() {
               <a 
                 key={method.title}
                 href={method.link}
-                className="glass-panel rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-colors group flex flex-col items-center text-center"
+                onClick={method.onClick}
+                className="glass-panel rounded-2xl p-6 border border-border hover:border-foreground/20 transition-colors group flex flex-col items-center text-center bg-card"
               >
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4 text-neutral-400 group-hover:text-white group-hover:bg-white/10 transition-colors">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-muted-foreground group-hover:text-foreground group-hover:bg-foreground/10 transition-colors">
                   <Icon className="w-5 h-5" />
                 </div>
-                <h4 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-2">{method.title}</h4>
-                <p className="text-white font-medium">{method.value}</p>
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">{method.title}</h4>
+                <p className="text-foreground font-medium">{method.value}</p>
               </a>
             );
           })}
@@ -38,8 +46,7 @@ export default function Contact() {
         <div className="flex justify-center gap-6">
           <SocialLink icon={Twitter} href="#" />
           <SocialLink icon={Github} href="#" />
-          <SocialLink icon={MessageSquare} href="#" />
-          <SocialLink icon={Linkedin} href="#" />
+          <SocialLink icon={Linkedin} href={data.founderLinkedIn} />
         </div>
       </div>
     </section>
@@ -52,7 +59,9 @@ function SocialLink({ icon: Icon, href }: { icon: any, href: string }) {
     <a 
       href={href}
       ref={ref as any}
-      className="w-14 h-14 rounded-full border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:border-white/50 transition-colors"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="w-14 h-14 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors glass-panel"
     >
       <Icon className="w-5 h-5" />
     </a>

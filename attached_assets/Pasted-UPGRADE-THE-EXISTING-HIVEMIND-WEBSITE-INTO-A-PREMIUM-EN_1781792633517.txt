@@ -1,0 +1,309 @@
+UPGRADE THE EXISTING HIVEMIND WEBSITE INTO A PREMIUM ENTERPRISE-GRADE AI AGENCY PLATFORM.
+
+IMPORTANT:
+Do NOT create a simple showcase website.
+Do NOT remove existing sections.
+Upgrade the current website into a fully editable, production-ready agency platform.
+
+BRAND IDENTITY:
+
+Brand Name: HiveMind
+
+Logo: Dynamic logo upload system from admin panel
+
+Theme:
+
+- Deep Black
+- Graphite
+- Gunmetal
+- Titanium Silver
+- Metallic Chrome Gradients
+- Glassmorphism
+- Premium Enterprise AI Feel
+
+Design Inspiration:
+Apple
+Linear
+Stripe
+OpenAI
+Tesla
+Arc Browser
+
+=================================================
+
+FIX EXISTING ISSUES
+
+1. Dark/Light Mode
+
+Current dark-light toggle is not working properly.
+
+Requirements:
+
+- Entire website must support both modes
+- Navbar
+- Hero section
+- AI assistant
+- Service cards
+- Projects
+- Testimonials
+- Founder section
+- Pricing
+- Footer
+- Contact forms
+
+Theme preference must save automatically using localStorage.
+
+=================================================
+
+2. ADMIN PANEL V2
+
+Create a hidden admin dashboard.
+
+Route:
+
+/admin
+
+Password protected.
+
+Admin Features:
+
+BRANDING
+
+- Upload Logo
+- Replace Logo
+- Change Favicon
+- Upload Cover Banner
+- Edit Brand Name
+- Edit Brand Slogan
+
+FOUNDER
+
+- Upload Founder Avatar
+- Change Founder Name
+- Change Founder Title
+- Change Founder Tagline
+- Change Founder Description
+- Edit Experience
+- Edit Project Count
+- Edit Client Count
+- Edit Social Links
+
+SERVICES
+
+- Add Service
+- Remove Service
+- Edit Price
+- Edit Icon
+- Edit Features
+- Edit Description
+
+PROJECTS
+
+- Add Live Project
+- Remove Project
+- Upload Thumbnail
+- Change Progress
+- Edit Project Details
+
+TESTIMONIALS
+
+- Add
+- Remove
+- Edit
+
+PRICING
+
+- Full Pricing Editor
+
+CONTACT
+
+- Email
+- WhatsApp
+- Discord
+- Location
+
+SEO
+
+- Meta Title
+- Meta Description
+- Open Graph Image
+
+=================================================
+
+3. PREMIUM OWNER SECTION
+
+Completely redesign founder card.
+
+Requirements:
+
+- Massive enterprise-level founder showcase
+- Metallic glass panel
+- 3D layered design
+- Animated border glow
+- Floating particles
+- Magnetic buttons
+- Premium social icons
+
+Layout:
+
+Large round avatar
+
+Founder Name
+
+Founder Title
+
+Short AI-focused tagline
+
+Achievements
+
+Statistics
+
+Social buttons
+
+Founder Story section
+
+Must look like the founder section of a billion-dollar AI company.
+
+=================================================
+
+4. ADVANCED EFFECTS
+
+Add:
+
+- Mouse Reactive Lighting
+- Magnetic Buttons
+- 3D Tilt Cards
+- Glassmorphism V2
+- Floating Particles
+- Scroll Trigger Animations
+- Infinite Marquee Scroll
+- Smooth Reveal Effects
+- Premium Hover States
+- Liquid Navbar Animation
+- Black Hole Loading Animation
+- Liquid Page Transitions
+
+DO NOT ADD CURSOR GLOW EFFECT.
+
+=================================================
+
+5. LOGO MANAGEMENT SYSTEM
+
+Create a complete logo management feature.
+
+Admin can:
+
+- Upload PNG
+- Upload SVG
+- Upload WEBP
+
+Logo automatically updates everywhere:
+
+- Navbar
+- Footer
+- Loading Screen
+- Mobile Menu
+- Browser Favicon
+
+=================================================
+
+6. AI CO-FOUNDER V2
+
+Upgrade chatbot.
+
+Features:
+
+- Business consultation mode
+- Service recommendation mode
+- Lead collection mode
+- Pricing guidance mode
+- Website planning mode
+
+Beautiful premium chat UI.
+
+=================================================
+
+7. SERVICES UPGRADE
+
+Include:
+
+Website Development
+Discord Bots
+AI Systems
+Automation
+Branding
+Logo Design
+Webhooks
+API Integrations
+Dashboard Development
+Portfolio Websites
+Business Websites
+Landing Pages
+AI Chatbots
+Custom Tools
+Community Systems
+Mobile App Development
+SaaS Development
+AI Agents
+AI Voice Assistants
+Cloud Infrastructure
+
+All editable from admin.
+
+=================================================
+
+8. CONTACT SYSTEM
+
+Working form.
+
+Validation.
+
+Success animation.
+
+WhatsApp button.
+
+Discord button.
+
+Email integration ready.
+
+=================================================
+
+9. MOBILE EXPERIENCE
+
+Must be fully optimized.
+
+No overlapping.
+
+No broken layouts.
+
+Smooth animations.
+
+Fast loading.
+
+=================================================
+
+10. PERFORMANCE
+
+Lazy loading
+
+Optimized assets
+
+Smooth scrolling
+
+Modern React architecture
+
+Reusable components
+
+Clean code
+
+=================================================
+
+FINAL GOAL
+
+The final website should feel like a premium AI company worth hundreds of millions of dollars.
+
+Not a template.
+
+Not a portfolio clone.
+
+A futuristic enterprise-grade AI agency platform with complete editing control from the admin dashboard.
