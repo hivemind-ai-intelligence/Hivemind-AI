@@ -48,12 +48,18 @@ export default function EnquiryForm() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+    try {
+      const existing = JSON.parse(localStorage.getItem("hivemind-leads") || "[]");
+      localStorage.setItem("hivemind-leads", JSON.stringify([
+        ...existing,
+        { ...values, timestamp: new Date().toISOString() }
+      ]));
+    } catch (_) {}
     setIsSubmitted(true);
     setTimeout(() => {
       setIsSubmitted(false);
       form.reset();
-    }, 3000);
+    }, 4000);
   }
 
   return (

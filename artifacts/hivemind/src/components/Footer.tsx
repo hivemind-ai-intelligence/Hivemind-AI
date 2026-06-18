@@ -23,10 +23,11 @@ export default function Footer() {
           <div>
             <h4 className="text-foreground font-semibold mb-6">Services</h4>
             <ul className="space-y-3 text-muted-foreground">
-              <li><a href="#services" className="hover:text-foreground transition-colors">Web Development</a></li>
-              <li><a href="#services" className="hover:text-foreground transition-colors">AI Systems</a></li>
-              <li><a href="#services" className="hover:text-foreground transition-colors">Automation</a></li>
-              <li><a href="#services" className="hover:text-foreground transition-colors">Discord Bots</a></li>
+              {data.services.slice(0, 6).map((s) => (
+                <li key={s.id}>
+                  <a href="#services" className="hover:text-foreground transition-colors">{s.name}</a>
+                </li>
+              ))}
             </ul>
           </div>
 

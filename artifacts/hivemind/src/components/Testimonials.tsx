@@ -48,7 +48,7 @@ export default function Testimonials() {
 
         <div className="max-w-4xl mx-auto relative">
           
-          <div className="relative h-[300px] flex items-center justify-center">
+          <div className="relative min-h-[300px] flex items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}

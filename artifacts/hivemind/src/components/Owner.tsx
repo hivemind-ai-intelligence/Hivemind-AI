@@ -108,7 +108,7 @@ export default function Owner() {
                 </h2>
                 
                 <div className="text-base text-muted-foreground leading-relaxed mb-8">
-                  <p>{data.founderTagline}</p>
+                  <p>{data.founderBio}</p>
                   
                   <AnimatePresence>
                     {expanded && (
@@ -119,7 +119,7 @@ export default function Owner() {
                         className="overflow-hidden"
                       >
                         <p className="mt-4 pt-4 border-t border-border">
-                          {data.founderBio}
+                          Passionate about the intersection of human creativity and machine intelligence, I founded {data.brandName} to give every creator and business access to world-class AI infrastructure. Every system we build is crafted with the precision of an engineer and the vision of a strategist.
                         </p>
                       </motion.div>
                     )}
@@ -128,6 +128,7 @@ export default function Owner() {
                   <button 
                     onClick={() => setExpanded(!expanded)}
                     className="flex items-center gap-1 text-sm font-medium text-foreground mt-4 hover:underline"
+                    data-testid="founder-story-toggle"
                   >
                     {expanded ? "Read less" : "Founder Story"}
                     {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

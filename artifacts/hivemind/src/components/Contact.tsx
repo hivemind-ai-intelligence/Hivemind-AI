@@ -1,4 +1,4 @@
-import { Mail, MessageSquare, Phone, MapPin, Twitter, Github, Linkedin, Copy } from "lucide-react";
+import { Mail, MessageSquare, Phone, MapPin, Linkedin } from "lucide-react";
 import { useAdminData } from "@/hooks/useAdminData";
 import { useMagneticEffect } from "@/hooks/useMagneticEffect";
 import { toast } from "sonner";
@@ -43,11 +43,11 @@ export default function Contact() {
           })}
         </div>
 
-        <div className="flex justify-center gap-6">
-          <SocialLink icon={Twitter} href="#" />
-          <SocialLink icon={Github} href="#" />
-          <SocialLink icon={Linkedin} href={data.founderLinkedIn} />
-        </div>
+        {(data.founderLinkedIn && data.founderLinkedIn !== "#") && (
+          <div className="flex justify-center gap-6">
+            <SocialLink icon={Linkedin} href={data.founderLinkedIn} />
+          </div>
+        )}
       </div>
     </section>
   );

@@ -41,8 +41,8 @@ export default function Pricing() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {data.pricing.map((tier, i) => {
-            const price = isAnnual 
-              ? (typeof tier.annual === 'number' ? Math.round(tier.annual / 12) : tier.annual) 
+            const price = isAnnual
+              ? (typeof tier.monthly === 'number' ? Math.round(tier.monthly * 0.8) : tier.monthly)
               : tier.monthly;
             
             return (
