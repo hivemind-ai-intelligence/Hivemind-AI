@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useAdminData } from "@/hooks/useAdminData";
+import Logo from "./Logo";
 
 export default function Footer() {
   const { data } = useAdminData();
@@ -11,16 +12,7 @@ export default function Footer() {
           
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-6 group inline-flex">
-              {data.logoDataUrl ? (
-                <img src={data.logoDataUrl} alt={data.brandName} className="h-8 object-contain" />
-              ) : (
-                <>
-                  <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center">
-                    <div className="w-3 h-3 bg-background rounded-full"></div>
-                  </div>
-                  <span className="font-bold text-xl tracking-wide text-foreground">{data.brandName}</span>
-                </>
-              )}
+              <Logo className="h-8" />
             </Link>
             <p className="text-muted-foreground max-w-sm">
               {data.tagline}<br />

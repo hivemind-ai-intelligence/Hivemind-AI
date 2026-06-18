@@ -41,7 +41,9 @@ export default function Pricing() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {data.pricing.map((tier, i) => {
-            const price = isAnnual && typeof tier.annual === 'number' ? tier.annual / 12 : tier.monthly;
+            const price = isAnnual 
+              ? (typeof tier.annual === 'number' ? Math.round(tier.annual / 12) : tier.annual) 
+              : tier.monthly;
             
             return (
               <motion.div
@@ -50,7 +52,7 @@ export default function Pricing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className={`relative rounded-3xl p-8 flex flex-col h-full ${
+                className={`relative rounded-3xl p-8 flex flex-col h-full min-w-0 overflow-hidden ${
                   tier.recommended 
                     ? "bg-card border-2 border-primary shadow-xl" 
                     : "glass-panel border-border"
@@ -69,7 +71,7 @@ export default function Pricing() {
                 <div className="mb-8">
                   <div className="flex items-baseline gap-1">
                     {typeof price === 'number' && <span className="text-2xl text-muted-foreground font-bold">$</span>}
-                    <span className="text-5xl font-bold text-foreground tracking-tight">{price}</span>
+                    <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight">{typeof price === 'number' ? Math.round(price) : price}</span>
                     {typeof price === 'number' && <span className="text-muted-foreground ml-1">/mo</span>}
                   </div>
                 </div>

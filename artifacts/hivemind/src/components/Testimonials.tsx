@@ -58,7 +58,7 @@ export default function Testimonials() {
                 transition={{ duration: 0.5, ease: "easeInOut" }}
                 className="absolute w-full px-4 md:px-12"
               >
-                <div className="glass-panel rounded-3xl p-8 md:p-12 border border-border shadow-2xl relative bg-background/80 text-center md:text-left">
+                <div className="glass-panel rounded-3xl p-8 md:p-12 border border-border shadow-2xl relative bg-card/80 text-center md:text-left overflow-hidden">
                   <Quote className="absolute top-8 left-8 w-12 h-12 text-foreground/5 hidden md:block" />
                   
                   <div className="flex gap-1 mb-6 relative z-10 justify-center md:justify-start">

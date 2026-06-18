@@ -69,7 +69,7 @@ export default function AdminPanel() {
           >
             <div className="flex items-center justify-between p-6 border-b border-white/10">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Lock className="w-5 h-5" /> HiveMind Admin
+                <Lock className="w-5 h-5" /> Hivemind AI Admin
               </h2>
               <Button
                 variant="ghost"

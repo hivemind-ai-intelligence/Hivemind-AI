@@ -26,6 +26,7 @@ export interface TestimonialData {
   author: string;
   role: string;
   rating: number;
+  avatarUrl?: string;
 }
 
 export interface PricingData {
@@ -87,7 +88,7 @@ export interface AdminData {
 }
 
 const defaultData: AdminData = {
-  brandName: "HIVEMIND",
+  brandName: "Hivemind AI",
   tagline: "Humans. AI. One Mind.",
   logoDataUrl: null,
   faviconDataUrl: null,
@@ -162,8 +163,8 @@ const defaultData: AdminData = {
   contactDiscord: "HiveMind#0001",
   contactLocation: "San Francisco, CA",
 
-  seoTitle: "HiveMind | Premium AI Agency & Development",
-  seoDescription: "HiveMind creates websites, AI systems, automation tools and digital infrastructure for the next generation of creators and businesses."
+  seoTitle: "Hivemind AI | Premium AI Agency & Development",
+  seoDescription: "Hivemind AI creates websites, AI systems, automation tools and digital infrastructure for the next generation of creators and businesses."
 };
 
 interface AdminContextType {

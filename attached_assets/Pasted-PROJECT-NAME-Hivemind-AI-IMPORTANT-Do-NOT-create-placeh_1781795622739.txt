@@ -1,0 +1,214 @@
+PROJECT NAME: Hivemind AI
+
+IMPORTANT: Do NOT create placeholders, mock editors, demo components, or fake functionality. Every feature must be fully functional and connected to the website data.
+
+FIX ALL CURRENT ISSUES:
+
+1. PRICING SECTION BUG
+
+- Monthly/Annual toggle is causing decimal values like 40.8333333333.
+- Prices must always display clean integers only.
+- Example:
+  Starter: $49
+  Professional: $149
+  Business: $349
+- No overflowing numbers.
+- Numbers must stay inside cards on all mobile screen sizes.
+- Responsive typography required.
+
+2. ADMIN DASHBOARD FIX
+   Current problem:
+   "Advanced array editor for Services/Data managed automatically via AdminDataContext"
+
+REMOVE THIS COMPLETELY.
+
+Replace with real editable forms.
+
+For Services:
+
+- Add Service Title field
+- Add Description field
+- Add Icon upload
+- Add Feature list editor
+- Add Add Service button
+- Add Delete Service button
+
+For Projects:
+
+- Project title
+- Description
+- Image upload
+- Project URL
+- Add/Delete buttons
+
+For Testimonials:
+
+- Client name
+- Client role
+- Company
+- Testimonial text
+- Avatar upload
+- Rating selector
+- Add/Delete buttons
+
+For Pricing:
+
+- Plan name
+- Price
+- Features
+- Recommended toggle
+- Add/Delete buttons
+
+Everything must be editable visually from admin panel.
+
+3. SAVE BUTTON FEEDBACK
+   After clicking Save Changes:
+
+- Show success toast:
+  "Changes saved successfully."
+- Show loading state while saving.
+- Disable button during save.
+- Show error toast if save fails.
+
+4. BUTTON CLICK ISSUE
+   Some admin buttons are not responding.
+   Fix all click handlers.
+   Every button must be fully functional on mobile and desktop.
+
+5. DARK/LIGHT MODE
+   Theme switching must affect:
+
+- Entire website
+- Navbar
+- Cards
+- Footer
+- Forms
+- Admin dashboard
+- Modals
+- Testimonials
+- Pricing cards
+
+No mixed colors.
+
+6. HIVEMIND AI REBRANDING
+   Replace every occurrence of:
+   HiveMind
+   HiveMind Admin
+   HiveMind Studio
+
+with:
+
+Hivemind AI
+
+Use consistent branding everywhere.
+
+7. PREMIUM LOGO SYSTEM
+   Current logo looks cheap.
+
+Create:
+
+- Premium futuristic AI company logo
+- Glassmorphism style
+- Professional enterprise quality
+- Looks like OpenAI, Anthropic, Stripe level branding
+- SVG based
+
+Add logo management inside admin dashboard:
+
+- Upload logo
+- Replace logo
+- Dark logo
+- Light logo
+- Favicon upload
+
+8. FOUNDER SECTION
+   Make founder card ultra-premium.
+
+Add:
+
+- Founder image upload
+- Founder name
+- Founder title
+- Founder bio
+- Social links
+- AI styled animated border
+- Glass effect
+- Premium hover animation
+
+Should feel like a billion-dollar AI startup website.
+
+9. MAGNETIC BUTTONS
+   Currently not visible.
+
+Implement properly:
+
+- Buttons subtly follow cursor
+- Smooth animation
+- Mobile-safe fallback
+- Works on CTA buttons
+
+10. MOUSE REACTIVE LIGHTING
+    Currently missing.
+
+Implement:
+
+- Soft radial light following cursor
+- Very subtle
+- Performance optimized
+- Disabled on mobile devices
+
+11. 3D TILT CARDS
+    Current service section is confusing.
+
+Fix:
+
+- Reduce tilt intensity
+- Improve readability
+- Content must stay readable
+- Mobile version should disable tilt automatically
+
+12. MOBILE RESPONSIVENESS
+    Audit entire website.
+
+Fix:
+
+- Overflowing text
+- Broken cards
+- Button alignment
+- Navbar spacing
+- Testimonials spacing
+- Pricing layout
+- Admin dashboard layout
+
+13. TESTIMONIAL SECTION
+    Add:
+
+- Avatar upload
+- Real image support
+- Editable stars
+- Better slider controls
+
+14. PERFORMANCE
+    Optimize:
+
+- Animations
+- Images
+- Fonts
+- Loading speed
+
+15. FINAL CHECK
+    Before completion:
+
+- Test every admin editor
+- Test save functionality
+- Test theme switch
+- Test mobile responsiveness
+- Test logo upload
+- Test founder image upload
+- Test service editing
+- Test pricing editing
+
+Do not leave placeholder text.
+Do not leave demo components.
+Do not leave "Advanced array editor" messages.
+Everything must be production-ready and fully editable from admin dashboard.

@@ -31,7 +31,7 @@ export default function Contact() {
                 key={method.title}
                 href={method.link}
                 onClick={method.onClick}
-                className="glass-panel rounded-2xl p-6 border border-border hover:border-foreground/20 transition-colors group flex flex-col items-center text-center bg-card"
+                className="glass-panel rounded-2xl p-6 border border-border hover:border-foreground/20 transition-colors group flex flex-col items-center text-center bg-card/50"
               >
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-muted-foreground group-hover:text-foreground group-hover:bg-foreground/10 transition-colors">
                   <Icon className="w-5 h-5" />

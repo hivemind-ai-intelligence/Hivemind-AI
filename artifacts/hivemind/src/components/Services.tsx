@@ -20,6 +20,7 @@ const ServiceCard = React.memo(({ service, index }: { service: any, index: numbe
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 768) return;
     if (!cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -28,8 +29,8 @@ const ServiceCard = React.memo(({ service, index }: { service: any, index: numbe
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     
-    const rotateX = ((y - centerY) / centerY) * -10;
-    const rotateY = ((x - centerX) / centerX) * 10;
+    const rotateX = ((y - centerY) / centerY) * -5;
+    const rotateY = ((x - centerX) / centerX) * 5;
     
     setRotate({ x: rotateX, y: rotateY });
   }, []);

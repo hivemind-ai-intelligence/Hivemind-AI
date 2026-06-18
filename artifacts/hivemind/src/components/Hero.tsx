@@ -21,6 +21,7 @@ export default function Hero() {
   const btn2Ref = useMagneticEffect(0.2);
 
   useEffect(() => {
+    if ('ontouchstart' in window) return;
     const handleMouseMove = (e: MouseEvent) => {
       if (!heroRef.current) return;
       const rect = heroRef.current.getBoundingClientRect();
@@ -38,7 +39,7 @@ export default function Hero() {
       <div 
         className="absolute inset-0 z-0 pointer-events-none transition-opacity duration-300"
         style={{
-          background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, rgba(150, 150, 200, 0.1), transparent 40%)`,
+          background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, rgba(168,178,196,0.08), transparent 70%)`,
         }}
       />
       <BlackHoleCanvas />
@@ -96,7 +97,7 @@ export default function Hero() {
           </a>
           <a href="#services" ref={btn2Ref as any} className="block">
             <Button size="lg" variant="outline" className="rounded-full h-14 px-8 glass-panel text-foreground hover:bg-foreground/5 text-base font-medium">
-              Explore {data.brandName}
+              Explore {data.brandName || "Hivemind AI"}
             </Button>
           </a>
         </motion.div>

@@ -1,9 +1,11 @@
 import { useRef, useEffect } from 'react';
 
 export function useMagneticEffect(strength = 0.5) {
-  const ref = useRef<HTMLButtonElement | HTMLAnchorElement | HTMLDivElement>(null);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    if ('ontouchstart' in window) return;
+
     const element = ref.current;
     if (!element) return;
 
@@ -20,6 +22,10 @@ export function useMagneticEffect(strength = 0.5) {
 
     const handleMouseLeave = () => {
       element.style.transform = 'translate(0px, 0px)';
+      element.style.transition = 'transform 0.3s ease-out';
+      setTimeout(() => {
+        if (element) element.style.transition = '';
+      }, 300);
     };
 
     element.addEventListener('mousemove', handleMouseMove);

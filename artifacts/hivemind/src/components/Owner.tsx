@@ -17,8 +17,8 @@ export default function Owner() {
     const y = e.clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -5;
-    const rotateY = ((x - centerX) / centerX) * 5;
+    const rotateX = ((y - centerY) / centerY) * -8;
+    const rotateY = ((x - centerX) / centerX) * 8;
     setRotate({ x: rotateX, y: rotateY });
   }, []);
 
@@ -89,7 +89,10 @@ export default function Owner() {
                     />
                   ) : (
                     <div className="w-40 h-40 md:w-48 md:h-48 rounded-full bg-foreground flex items-center justify-center relative z-10 border-4 border-background shadow-xl">
-                      <Briefcase className="w-16 h-16 text-background" />
+                      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M32 2L6 17V47L32 62L58 47V17L32 2Z" stroke="currentColor" strokeWidth="2" fill="none" className="text-background" />
+                        <path d="M22 26V38M42 26V38M22 32H42" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-background" />
+                      </svg>
                     </div>
                   )}
                 </div>
@@ -105,7 +108,7 @@ export default function Owner() {
                 </h2>
                 
                 <div className="text-base text-muted-foreground leading-relaxed mb-8">
-                  <p>{data.founderBio}</p>
+                  <p>{data.founderTagline}</p>
                   
                   <AnimatePresence>
                     {expanded && (
@@ -116,7 +119,7 @@ export default function Owner() {
                         className="overflow-hidden"
                       >
                         <p className="mt-4 pt-4 border-t border-border">
-                          Through my journey in tech, I've seen firsthand how the right tools can empower individuals to build empires. At {data.brandName}, we don't just write code — we engineer the foundation for your success. Our philosophy centers on seamless integration between human creativity and artificial intelligence.
+                          {data.founderBio}
                         </p>
                       </motion.div>
                     )}

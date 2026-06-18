@@ -84,7 +84,7 @@ export default function EnquiryForm() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="glass-panel rounded-3xl p-8 md:p-12 border border-border relative overflow-hidden bg-background"
+            className="glass-panel rounded-3xl p-8 md:p-12 border border-border relative overflow-hidden bg-card/50"
           >
             {isSubmitted ? (
               <div className="absolute inset-0 bg-background/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-8 animate-in fade-in duration-300">

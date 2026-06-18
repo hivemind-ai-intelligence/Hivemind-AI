@@ -49,7 +49,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
             transition={{ delay: 0.5, duration: 0.8 }}
             className="text-center z-10"
           >
-            <h1 className="text-4xl font-bold text-foreground tracking-wider mb-2">{data.brandName}</h1>
+            <h1 className="text-4xl font-bold text-foreground tracking-wider mb-2">{data.brandName || "Hivemind AI"}</h1>
             <p className="text-sm text-muted-foreground tracking-widest uppercase">{data.tagline}</p>
           </motion.div>
         </motion.div>
