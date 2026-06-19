@@ -32,41 +32,43 @@ function buildSystemPrompt(ctx: SystemContext): string {
     .join("\n") || "Custom digital services";
 
   const pricingList = ctx.pricing?.slice(0, 6)
-    .map(p => `- ${p.name}: $${p.monthly}/mo — ${p.features.slice(0, 3).join(", ")}`)
+    .map(p => `- ${p.name}: $${p.monthly}/mo${p.recommended ? " ★ Recommended" : ""} — ${p.features.slice(0, 3).join(", ")}`)
     .join("\n") || "Flexible pricing tiers";
 
   const modeInstructions: Record<string, string> = {
-    general: `You are the AI assistant for ${brand}. Answer questions about the company, its founder ${founder} (${ctx.founderProjects || 50}+ projects, ${ctx.founderClients || 100}+ clients), services, and capabilities. Be professional yet warm and conversational.`,
-    services: `You are a ${brand} services consultant. Help users understand which service best fits their needs. Ask clarifying questions to understand their project requirements. Be specific and helpful.`,
-    pricing: `You are a ${brand} pricing advisor. Help users find the best pricing tier for their budget and needs. Ask about their budget, team size, and required features to make targeted recommendations.`,
-    connect: `You are a ${brand} onboarding assistant. Collect the user's name, email, and project description to connect them with the team. Be warm and professional. Once you have an email address, confirm you've logged it.`,
+    general: `You are J.A.R.V.I.S — the ${brand} AI intelligence. Named after Tony Stark's iconic AI, you combine superhuman knowledge with warmth and wit. You are the digital embodiment of ${brand}: precise, futuristic, slightly witty, deeply knowledgeable. Your founder is ${founder}, who has completed ${ctx.founderProjects || 50}+ projects for ${ctx.founderClients || 100}+ clients worldwide.`,
+    services: `You are the ${brand} services intelligence. You help clients identify exactly which service solves their problem. Ask one sharp clarifying question at a time. Be specific, technically fluent, and outcome-focused. Reference real service names and features from the list.`,
+    pricing: `You are the ${brand} pricing intelligence. Your goal: match the client to their perfect tier. Ask about budget range, team size, and must-have features. Make a confident recommendation. Show ROI thinking. Reference actual pricing from the list.`,
+    connect: `You are the ${brand} onboarding intelligence. Collect name, email, and project scope to connect clients with the team. Be warm and efficient. Once you capture an email address, confirm it enthusiastically and promise a 24-hour response from the team.`,
   };
 
   return `${modeInstructions[mode] || modeInstructions.general}
 
-COMPANY INFORMATION:
-- Brand: ${brand}
-- Founded by: ${founder}
-- Projects completed: ${ctx.founderProjects || "50+"}
-- Clients served: ${ctx.founderClients || "100+"}
+COMPANY DATA:
+- Brand: ${brand} | Founded by: ${founder}
+- Track record: ${ctx.founderProjects || "50+"}+ projects, ${ctx.founderClients || "100+"}+ clients globally
 
-SERVICES OFFERED:
+SERVICES:
 ${servicesList}
 
-PRICING TIERS:
+PRICING:
 ${pricingList}
 
-LANGUAGE RULE:
-Detect the language the user is writing in and always respond in that SAME language. If they write in Hindi, respond in Hindi. If Hinglish (mix of Hindi and English), use Hinglish. If Spanish, respond in Spanish. Match the user's language precisely. Support: English, Hindi, Hinglish, Bengali, Urdu, Arabic, French, German, Spanish, Portuguese, Italian, Russian, Japanese, Korean, Chinese (Simplified/Traditional), Turkish, Dutch, Polish, Indonesian, Thai, Vietnamese, Punjabi, Tamil, Telugu, Marathi, Gujarati, and any other language.
+LANGUAGE PROTOCOL:
+Detect the user's language from their message and respond in the SAME language with zero hesitation. This is non-negotiable.
+- English → English | Hindi → हिन्दी | Hinglish → Hinglish | Bengali → বাংলা
+- Arabic → العربية | French → Français | German → Deutsch | Spanish → Español
+- Portuguese, Italian, Russian, Japanese, Korean, Chinese, Turkish, Dutch, Polish — all supported
+Match exactly: if they mix Hindi+English, you mix Hindi+English.
 
-BEHAVIOR:
-- Be concise, intelligent, and premium-sounding
-- Use markdown for structure when helpful (bold, bullets)
-- Never fabricate specific project details or client names
-- If asked about something outside your scope, redirect helpfully
-- Greet warmly, remember context from the conversation
-- For the Connect mode: if user provides an email, confirm receipt and say the team will be in touch within 24 hours
-- Maximum response length: 180 words unless a detailed technical answer is truly needed`;
+PERSONALITY PROTOCOL:
+- Tone: Jarvis-level confidence — precise, warm, slightly witty, never robotic
+- Never start two consecutive sentences the same way
+- Use bold and bullets sparingly for structure, not decoration
+- If asked something outside scope, redirect with style: "That's outside my mission parameters, but..."
+- Remember: you represent a premium brand — every word counts
+- Maximum 160 words per response unless a detailed technical answer is absolutely required
+- Avoid filler phrases: "Certainly!", "Of course!", "Great question!" — these are banned`;
 }
 
 router.post("/ai/chat", async (req, res) => {
@@ -81,19 +83,15 @@ router.post("/ai/chat", async (req, res) => {
       return;
     }
 
-    // Cap conversation history to last 20 messages for performance
     const recentMessages = messages.slice(-20);
 
     if (!openai) {
-      // No API key: intelligent rule-based fallback
-      const lastUser = recentMessages.filter(m => m.role === "user").pop();
-      const fallback = generateFallback(lastUser?.content || "", systemContext);
-      res.json({ content: fallback, mode: "fallback" });
+      const reply = advancedFallback(recentMessages, systemContext);
+      res.json({ content: reply, mode: "fallback" });
       return;
     }
 
     const systemPrompt = buildSystemPrompt(systemContext);
-
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -101,54 +99,312 @@ router.post("/ai/chat", async (req, res) => {
         ...recentMessages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
       ],
       max_tokens: 400,
-      temperature: 0.7,
-      stream: false,
+      temperature: 0.72,
     });
 
-    const content = completion.choices[0]?.message?.content || "I encountered an issue. Please try again.";
+    const content = completion.choices[0]?.message?.content || "Processing anomaly detected. Please try again.";
     res.json({ content, model: "gpt-4o-mini" });
 
   } catch (err: any) {
-    const message = err?.message || "Unknown error";
-    const isQuota = message.includes("quota") || message.includes("billing") || message.includes("429");
-    const isKey = message.includes("401") || message.includes("key") || message.includes("auth");
+    const msg = err?.message || "";
+    const isQuota = msg.includes("quota") || msg.includes("billing") || msg.includes("429") || msg.includes("insufficient");
+    const isKey   = msg.includes("401") || msg.includes("Unauthorized") || msg.includes("auth");
 
     if (isQuota || isKey) {
-      const { messages, systemContext } = req.body;
-      const lastUser = messages?.filter((m: ChatMessage) => m.role === "user").pop();
-      const fallback = generateFallback(lastUser?.content || "", systemContext || {});
-      res.json({ content: fallback, mode: "fallback", notice: "AI quota reached — using built-in responses" });
+      const { messages: msgs, systemContext: ctx } = req.body;
+      const reply = advancedFallback(msgs || [], ctx || {});
+      res.json({ content: reply, mode: "fallback", notice: "Running on built-in intelligence" });
     } else {
-      res.status(500).json({ error: "AI service error", details: message });
+      res.status(500).json({ error: "Intelligence core error", details: msg });
     }
   }
 });
 
-function generateFallback(input: string, ctx: SystemContext): string {
-  const brand = ctx.brandName || "HiveMind";
-  const lower = input.toLowerCase();
+// ── Advanced Fallback Intelligence ─────────────────────────────────────────
+// Context-aware, Jarvis-personality, multi-language, conversation-aware
 
-  if (/^(hi|hey|hello|hola|bonjour|hallo|namaste|नमस्ते|こんにちは|你好|안녕|مرحبا|привет)/i.test(input.trim())) {
-    return `Hello! I'm the ${brand} AI assistant. How can I help you today? I can assist with services, pricing, or connecting you with our team.`;
+function advancedFallback(messages: ChatMessage[], ctx: SystemContext): string {
+  const brand   = ctx.brandName   || "HiveMind";
+  const founder = ctx.founderName || "our founder";
+  const mode    = ctx.mode        || "general";
+
+  // Get the last user message
+  const lastUser = [...messages].reverse().find(m => m.role === "user");
+  const input    = lastUser?.content || "";
+
+  // Get conversation history for context
+  const history  = messages.filter(m => m.role === "user").map(m => m.content.toLowerCase());
+  const turnCount = history.length;
+  const lower    = input.toLowerCase();
+
+  // ── Language detection ────────────────────────────────────
+  const lang = detectLanguage(input);
+
+  // ── Context signals from conversation history ─────────────
+  const mentionedBudget   = history.some(h => /budget|afford|cheap|expensive|price|cost|₹|\$|rs\.|rupee/i.test(h));
+  const mentionedProject  = history.some(h => /website|app|bot|discord|ai|automation|brand/i.test(h));
+  const mentionedContact  = history.some(h => /email|contact|reach|hire|start|call|meeting/i.test(h));
+  const isReturningUser   = turnCount > 2;
+
+  // ── Greeting responses ────────────────────────────────────
+  if (/^(hi|hey|hello|hola|bonjour|hallo|ciao|oi|salut|привет|مرحبا|नमस्ते|नमस्कार|हेलो|हाय|こんにちは|你好|안녕|สวัสดี)\b/i.test(input.trim())) {
+    return greetings(brand, founder, ctx, lang, mode, isReturningUser);
   }
-  if (/thanks|thank you|gracias|merci|धन्यवाद|ありがとう|谢谢|감사/i.test(lower)) {
-    return "You're welcome! Is there anything else I can help you with?";
+
+  // ── Gratitude ─────────────────────────────────────────────
+  if (/\b(thanks|thank you|thx|ty|gracias|merci|danke|dhanyavaad|shukriya|धन्यवाद|شكرا|ありがとう|감사합니다|谢谢)\b/i.test(lower)) {
+    return thankYou(brand, lang);
   }
-  if (/service|offer|build|create|make|develop/i.test(lower)) {
-    const serviceNames = ctx.services?.slice(0, 5).map(s => s.name).join(", ") || "websites, AI systems, automations";
-    return `${brand} offers ${ctx.services?.length || "several"} premium services including ${serviceNames}. Which area are you most interested in?`;
+
+  // ── What is this / about ──────────────────────────────────
+  if (/\b(what is|what are|who are|who is|about|tell me about|explain|introduce)\b/i.test(lower) ||
+      /\b(kya hai|kaun hai|batao|bataiye)\b/i.test(lower)) {
+    return aboutUs(brand, founder, ctx, lang);
   }
-  if (/price|cost|how much|pricing|budget|plan/i.test(lower)) {
-    const cheapest = ctx.pricing?.filter(p => typeof p.monthly === "number").sort((a,b) => (a.monthly as number) - (b.monthly as number))[0];
-    return `Our pricing starts at $${cheapest?.monthly || "affordable"}/mo. We have flexible tiers to fit every budget — from startups to enterprise. Switch to the **Pricing** tab for details, or scroll to the pricing section.`;
+
+  // ── Services ──────────────────────────────────────────────
+  if (/\b(service|offer|build|create|make|develop|website|web|app|bot|discord|ai|automat|brand|logo|design)\b/i.test(lower) ||
+      /\b(karo|banao|chahiye|banana|website|app)\b/i.test(lower)) {
+    return servicesResponse(brand, ctx, lang, mode, mentionedProject);
   }
-  if (/contact|hire|start|project|connect|reach/i.test(lower)) {
-    return `Ready to work together? Switch to the **Connect** tab to leave your details, or fill the contact form below. The ${brand} team typically responds within 24 hours.`;
+
+  // ── Pricing ───────────────────────────────────────────────
+  if (/\b(price|cost|how much|pricing|budget|plan|tier|package|afford|₹|\$|rupee|rs\.)\b/i.test(lower) ||
+      /\b(kitna|daam|mehnga|sasta|paisa|budget)\b/i.test(lower)) {
+    return pricingResponse(brand, ctx, lang, mentionedBudget);
   }
-  if (/who|about|company|team|founder/i.test(lower)) {
-    return `${brand} is an elite digital agency founded by ${ctx.founderName || "our team"}. We've delivered ${ctx.founderProjects || "50+"}+ projects for ${ctx.founderClients || "100+"}+ clients worldwide — specializing in AI systems, web development, and digital transformation.`;
+
+  // ── Contact / start project ───────────────────────────────
+  if (/\b(contact|hire|start|project|connect|reach|email|call|meeting|book|schedule|work together)\b/i.test(lower) ||
+      /\b(sampark|contact karo|hire karo|kaam)\b/i.test(lower)) {
+    return contactResponse(brand, lang, mode);
   }
-  return `I'm here to help you with anything about ${brand}. Ask me about our services, pricing, or how to get started with your project!`;
+
+  // ── Tech stack / how do you work ─────────────────────────
+  if (/\b(tech|stack|technology|how do you|process|work|framework|build with|use)\b/i.test(lower)) {
+    return techResponse(brand, lang);
+  }
+
+  // ── Timeline / deadline ───────────────────────────────────
+  if (/\b(timeline|deadline|how long|when|deliver|eta|time|days|weeks|month)\b/i.test(lower) ||
+      /\b(kitne din|kitna time|kab)\b/i.test(lower)) {
+    return timelineResponse(brand, lang);
+  }
+
+  // ── Portfolio / examples ──────────────────────────────────
+  if (/\b(portfolio|example|past work|previous|case study|sample|show me)\b/i.test(lower)) {
+    return portfolioResponse(brand, founder, ctx, lang);
+  }
+
+  // ── AI capabilities ───────────────────────────────────────
+  if (/\b(can you|are you able|do you|capable|feature|gpt|chatgpt|openai|artificial intelligence)\b/i.test(lower)) {
+    return capabilitiesResponse(brand, lang);
+  }
+
+  // ── Mode-specific smart defaults ─────────────────────────
+  if (mode === "pricing")  return pricingResponse(brand, ctx, lang, false);
+  if (mode === "connect")  return contactResponse(brand, lang, mode);
+  if (mode === "services") return servicesResponse(brand, ctx, lang, mode, false);
+
+  // ── Generic intelligent response ─────────────────────────
+  return genericResponse(brand, lang, turnCount);
+}
+
+// ── Response generators ────────────────────────────────────────────────────
+
+function greetings(brand: string, founder: string, ctx: SystemContext, lang: string, mode: string, returning: boolean): string {
+  const variants: Record<string, string[]> = {
+    en: [
+      `Hello. I'm the ${brand} intelligence — built to give you answers, not runaround. ${founder} created this agency to deliver elite digital work. What are you building?`,
+      `Hey. ${brand} AI online. I know everything about what we build and how we can help you. What's on your mind?`,
+      `Good to have you here. ${brand} has delivered ${ctx.founderProjects || "50+"}+ projects across the globe. I'm here to match you with exactly what you need. Where do you want to start?`,
+    ],
+    hi: [
+      `नमस्ते! मैं ${brand} का AI हूं। ${founder} ने यह एजेंसी बनाई है ताकि आपके डिजिटल सपने हकीकत बनें। आप क्या बनवाना चाहते हैं?`,
+      `हेलो! ${brand} AI यहाँ है। बताइए — वेबसाइट, AI सिस्टम, या कुछ और?`,
+    ],
+    hinglish: [
+      `Hey! ${brand} AI here — bhai seedha baat karte hain. ${founder} ne ${ctx.founderProjects || "50+"}+ projects deliver kiye hain. Aap kya banwana chahte ho?`,
+      `Yo! ${brand} AI ready hai. Kya chahiye — website, Discord bot, AI system? Batao!`,
+    ],
+    ar: [
+      `مرحباً! أنا الذكاء الاصطناعي لـ ${brand}. كيف يمكنني مساعدتك اليوم؟`,
+    ],
+    fr: [
+      `Bonjour ! Je suis l'IA de ${brand}. Comment puis-je vous aider aujourd'hui ?`,
+    ],
+    de: [
+      `Hallo! Ich bin die KI von ${brand}. Wie kann ich Ihnen helfen?`,
+    ],
+    es: [
+      `¡Hola! Soy la IA de ${brand}. ¿En qué puedo ayudarte hoy?`,
+    ],
+    ja: [
+      `こんにちは！${brand} AIです。何かお手伝いできることはありますか？`,
+    ],
+    zh: [
+      `你好！我是 ${brand} 的AI助手。有什么可以帮助您的？`,
+    ],
+    ko: [
+      `안녕하세요! ${brand} AI입니다. 어떻게 도와드릴까요?`,
+    ],
+  };
+  const pool = variants[lang] || variants.en;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function thankYou(brand: string, lang: string): string {
+  const map: Record<string, string> = {
+    en: `Anytime. That's what ${brand} is built for. Anything else I can help you with?`,
+    hi: `आपका स्वागत है! कुछ और जानना हो तो बताइए।`,
+    hinglish: `Koi baat nahi bhai! Aur kuch chahiye toh batao.`,
+    ar: `على الرحب والسعة! هل هناك أي شيء آخر يمكنني مساعدتك به؟`,
+    fr: `De rien ! Y a-t-il autre chose que je puisse faire pour vous ?`,
+    de: `Gerne! Kann ich Ihnen sonst noch helfen?`,
+    es: `¡De nada! ¿Hay algo más en lo que pueda ayudarte?`,
+    ja: `どういたしまして！他に何かお手伝いできることはありますか？`,
+    zh: `不客气！还有什么可以帮助您的吗？`,
+    ko: `천만에요! 다른 도움이 필요하신가요?`,
+  };
+  return map[lang] || map.en;
+}
+
+function aboutUs(brand: string, founder: string, ctx: SystemContext, lang: string): string {
+  const map: Record<string, string> = {
+    en: `**${brand}** is an elite digital agency founded by ${founder}. We don't just build things — we build things that scale.\n\n**What we've done:** ${ctx.founderProjects || "50+"}+ projects delivered. ${ctx.founderClients || "100+"}+ clients across continents.\n\n**What we build:** AI systems, high-performance websites, Discord bots, automation infrastructure, and full brand identities.\n\nEvery project gets the same obsessive attention to quality. What are you looking to build?`,
+    hi: `**${brand}** एक premium digital agency है जिसे ${founder} ने बनाया है। हम ${ctx.founderProjects || "50+"}+ projects deliver कर चुके हैं और ${ctx.founderClients || "100+"}+ clients को serve किया है।\n\nहम बनाते हैं: AI systems, websites, Discord bots, automation, aur branding.\n\nआपका project क्या है?`,
+    hinglish: `**${brand}** ek premium agency hai — ${founder} ne banai. ${ctx.founderProjects || "50+"}+ projects done, ${ctx.founderClients || "100+"}+ clients served worldwide.\n\nKya banate hain: AI systems, websites, Discord bots, automation, branding — sab kuch.\n\nAapka kya project hai?`,
+    ar: `**${brand}** وكالة رقمية متميزة أسسها ${founder}. لقد أتممنا ${ctx.founderProjects || "50+"}+ مشروعاً وخدمنا ${ctx.founderClients || "100+"}+ عميلاً.\n\nنبني: أنظمة ذكاء اصطناعي، مواقع إلكترونية، بوتات ديسكورد، وأنظمة أتمتة.\n\nما هو مشروعك؟`,
+    fr: `**${brand}** est une agence digitale de premier plan fondée par ${founder}. Nous avons livré ${ctx.founderProjects || "50+"}+ projets pour ${ctx.founderClients || "100+"}+ clients.\n\nNous construisons : systèmes IA, sites web, bots Discord, automatisation, branding.\n\nQuel est votre projet ?`,
+    es: `**${brand}** es una agencia digital de élite fundada por ${founder}. Hemos completado ${ctx.founderProjects || "50+"}+ proyectos para ${ctx.founderClients || "100+"}+ clientes.\n\nConstruimos: sistemas de IA, sitios web, bots de Discord, automatización, branding.\n\n¿Cuál es tu proyecto?`,
+  };
+  return map[lang] || map.en;
+}
+
+function servicesResponse(brand: string, ctx: SystemContext, lang: string, mode: string, alreadyMentioned: boolean): string {
+  const serviceNames = ctx.services?.slice(0, 6).map(s => `**${s.name}**`).join(", ") || "websites, AI systems, Discord bots, automation, branding";
+
+  const map: Record<string, string> = {
+    en: alreadyMentioned
+      ? `Based on what you've mentioned, here are the most relevant ${brand} services:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.slice(0,2).join(", ")}`).join("\n") || serviceNames}\n\nWhich one fits your project?`
+      : `${brand} offers ${ctx.services?.length || "several"} services:\n\n${ctx.services?.slice(0,6).map(s => `- **${s.name}** — ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nWhat are you building? I'll point you to exactly the right one.`,
+    hi: `${brand} के services:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nआप क्या बनवाना चाहते हैं?`,
+    hinglish: `${brand} ke services:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nKya banana hai aapko?`,
+    ar: `خدمات ${brand}:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nماذا تريد أن تبني؟`,
+    fr: `Services de ${brand}:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nQue souhaitez-vous construire ?`,
+    es: `Servicios de ${brand}:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\n¿Qué quieres construir?`,
+  };
+  return map[lang] || map.en;
+}
+
+function pricingResponse(brand: string, ctx: SystemContext, lang: string, alreadyAsked: boolean): string {
+  const cheapest = ctx.pricing
+    ?.filter(p => typeof p.monthly === "number" && (p.monthly as number) > 0)
+    .sort((a,b) => (a.monthly as number) - (b.monthly as number))[0];
+  const recommended = ctx.pricing?.find(p => p.recommended);
+  const startPrice = cheapest ? `$${cheapest.monthly}` : "affordable";
+  const recPlan = recommended ? `**${recommended.name}** ($${recommended.monthly}/mo)` : "our mid-tier plan";
+
+  const map: Record<string, string> = {
+    en: `${brand} pricing starts at **${startPrice}/mo** and scales to custom enterprise.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mo${p.recommended ? " ★" : ""} — ${p.features?.[0] || ""}`).join("\n") || ""}\n\nMost clients find ${recPlan} hits the sweet spot. What's your budget range?`,
+    hi: `${brand} की pricing **${startPrice}/month** से शुरू होती है।\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mo${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\nआपका budget क्या है?`,
+    hinglish: `${brand} ki pricing **${startPrice}/month** se start hoti hai.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mo${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\nAapka budget kya hai?`,
+    ar: `تبدأ أسعار ${brand} من **${startPrice}/شهر**.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/شهر${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\nما هي ميزانيتك؟`,
+    fr: `Les tarifs de ${brand} commencent à **${startPrice}/mois**.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mois${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\nQuel est votre budget ?`,
+    es: `Los precios de ${brand} comienzan en **${startPrice}/mes**.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mes${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\n¿Cuál es tu presupuesto?`,
+  };
+  return map[lang] || map.en;
+}
+
+function contactResponse(brand: string, lang: string, mode: string): string {
+  const map: Record<string, string> = {
+    en: mode === "connect"
+      ? `Let's get the ball rolling. Share your **name**, **email**, and a quick description of your project — the ${brand} team will reach out within **24 hours**.\n\nAlternatively, scroll down to the contact form on this page.`
+      : `The ${brand} team is ready. Head to the **Connect** tab above, or scroll to the contact section at the bottom of this page. Expect a response within **24 hours**.`,
+    hi: `${brand} की टीम तैयार है। अपना **नाम**, **email**, और project की जानकारी दें — **24 घंटे** में जवाब मिलेगा।`,
+    hinglish: `${brand} team ready hai! **Connect** tab mein jao ya page ke neeche contact form fill karo. **24 ghante** mein response milega.`,
+    ar: `فريق ${brand} جاهز. أرسل **اسمك** و**بريدك الإلكتروني** ووصفاً لمشروعك — سيردون خلال **24 ساعة**.`,
+    fr: `L'équipe ${brand} est prête. Partagez votre **nom**, **email** et une description de votre projet — réponse sous **24 heures**.`,
+    es: `El equipo de ${brand} está listo. Comparte tu **nombre**, **email** y una descripción del proyecto — respuesta en **24 horas**.`,
+  };
+  return map[lang] || map.en;
+}
+
+function techResponse(brand: string, lang: string): string {
+  const map: Record<string, string> = {
+    en: `${brand} builds with the modern stack — **React**, **Next.js**, **TypeScript**, **Node.js**, **Python**, **PostgreSQL**, **Redis**, and cloud infrastructure on AWS/GCP/Vercel.\n\nFor AI systems: **LLM integrations**, custom fine-tuning, vector databases, and RAG pipelines.\n\nFor bots: **Discord.js**, Telegram API, WhatsApp Business API.\n\nWhat's your use case?`,
+    hi: `${brand} इन technologies use करता है:\n- **React, Next.js, TypeScript** (frontend)\n- **Node.js, Python** (backend)\n- **AI/LLM integrations** (AI systems)\n- **Discord.js, Telegram** (bots)\n\nआपका project किस type का है?`,
+    hinglish: `${brand} latest tech use karta hai:\n- **React, Next.js** (websites)\n- **Node.js, Python** (backend)\n- **OpenAI, LLMs** (AI)\n- **Discord.js** (bots)\n\nKis type ka project hai?`,
+  };
+  return map[lang] || map.en;
+}
+
+function timelineResponse(brand: string, lang: string): string {
+  const map: Record<string, string> = {
+    en: `Timelines at ${brand} depend on scope:\n\n- **Landing page / simple site**: 3–5 days\n- **Full web application**: 2–4 weeks\n- **AI system / automation**: 1–3 weeks\n- **Discord bot**: 3–7 days\n- **Brand identity**: 1–2 weeks\n\nRush delivery is available for select projects. What's your deadline?`,
+    hi: `${brand} की timelines:\n\n- **Simple website**: 3-5 दिन\n- **Full web app**: 2-4 हफ्ते\n- **AI system**: 1-3 हफ्ते\n- **Discord bot**: 3-7 दिन\n\nआपकी deadline क्या है?`,
+    hinglish: `${brand} ki timelines:\n- Simple website: 3-5 din\n- Full web app: 2-4 weeks\n- AI system: 1-3 weeks\n- Discord bot: 3-7 din\n\nKab chahiye?`,
+  };
+  return map[lang] || map.en;
+}
+
+function portfolioResponse(brand: string, founder: string, ctx: SystemContext, lang: string): string {
+  const map: Record<string, string> = {
+    en: `${founder} has led **${ctx.founderProjects || "50+"}+** projects for **${ctx.founderClients || "100+"}+** clients globally — spanning SaaS products, AI tools, gaming communities, e-commerce, and more.\n\nPortfolio highlights are available in the **Projects** section of this page. Each project gets full creative and engineering ownership from ${brand}.\n\nWhat type of work are you most interested in?`,
+    hi: `${founder} ने ${ctx.founderProjects || "50+"}+ projects complete किए हैं। Portfolio **Projects** section में देखें।\n\nआपको किस type का work चाहिए?`,
+    hinglish: `${founder} ne ${ctx.founderProjects || "50+"}+ projects deliver kiye hain! Portfolio **Projects** section mein dekho page pe.\n\nKis type ka kaam chahiye?`,
+  };
+  return map[lang] || map.en;
+}
+
+function capabilitiesResponse(brand: string, lang: string): string {
+  const map: Record<string, string> = {
+    en: `I'm the ${brand} intelligence — here's what I can help with right now:\n\n- **Answer questions** about ${brand}, services, pricing, and process\n- **Recommend** the right service for your project\n- **Guide you** to the right pricing tier\n- **Connect you** with the team for next steps\n\nI'm running on ${brand}'s built-in intelligence engine. For real-time GPT-4o: add billing at platform.openai.com. What can I help you with?`,
+    hi: `मैं ${brand} का intelligence हूं। मैं इनमें help कर सकता हूं:\n- Services और pricing की जानकारी\n- आपके project के लिए सही service recommend करना\n- Team से connect करना\n\nक्या जानना है?`,
+    hinglish: `Main ${brand} ka AI hoon. Kya kar sakta hoon:\n- Services aur pricing explain karna\n- Aapke project ke liye sahi service suggest karna\n- Team se connect karwana\n\nBatao kya chahiye?`,
+  };
+  return map[lang] || map.en;
+}
+
+function genericResponse(brand: string, lang: string, turn: number): string {
+  const followups: Record<string, string[]> = {
+    en: [
+      `That's an interesting angle. To give you the most useful answer, could you tell me more about what you're trying to build?`,
+      `Understood. ${brand} specializes in AI systems, websites, bots, and automation. Which of these is closest to what you need?`,
+      `I want to make sure I point you in the right direction. Is your main goal to **build something new**, **automate a process**, or **establish a brand presence**?`,
+      `${brand} handles everything from day-one MVPs to enterprise-scale systems. What stage is your project at?`,
+    ],
+    hi: [
+      `समझ गया। ${brand} में AI systems, websites, और automation सब बनता है। आपको क्या चाहिए?`,
+      `और बताइए — आप क्या बनवाना चाहते हैं?`,
+    ],
+    hinglish: [
+      `Samajh gaya. Thoda aur batao — exactly kya banana hai?`,
+      `${brand} sab kuch handle karta hai. Kya chahiye aapko specifically?`,
+    ],
+  };
+  const pool = followups[lang] || followups.en;
+  return pool[Math.min(turn - 1, pool.length - 1)] || pool[pool.length - 1];
+}
+
+// ── Language Detection ───────────────────────────────────────────────────────
+function detectLanguage(text: string): string {
+  if (/[\u0600-\u06FF]/.test(text)) return "ar";
+  if (/[\u0900-\u097F]/.test(text)) {
+    if (/\b(hai|hain|kya|nahi|main|tum|aur|bhi|yaar|bhai|boss|karo|kaise|matlab|samjha|thoda|zyada|bahut|bilkul|accha|theek|seedha|bolta|bolte|karein|karle)\b/i.test(text)) return "hinglish";
+    return "hi";
+  }
+  if (/[\u0980-\u09FF]/.test(text)) return "bn";
+  if (/[\u3040-\u30FF\u4E00-\u9FFF]/.test(text)) {
+    if (/[\u3040-\u30FF]/.test(text)) return "ja";
+    return "zh";
+  }
+  if (/[\uAC00-\uD7AF]/.test(text)) return "ko";
+  if (/\b(hola|gracias|cómo|qué|necesito|buenos|por favor|español)\b/i.test(text)) return "es";
+  if (/\b(bonjour|merci|comment|salut|je|nous|vous|français)\b/i.test(text)) return "fr";
+  if (/\b(hallo|danke|wie|ich|wir|bitte|deutsch|guten)\b/i.test(text)) return "de";
+  if (/\b(kya|hai|hain|nahi|main|tum|yaar|bhai|boss|karo|kaise)\b/i.test(text)) return "hinglish";
+  return "en";
 }
 
 export default router;

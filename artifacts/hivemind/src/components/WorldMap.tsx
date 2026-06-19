@@ -61,10 +61,9 @@ export default function WorldMap() {
 
         {/* Globe Container */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3, duration: 0.8 }}
+          viewport={{ once: true, amount: 0 }}
           className="rounded-3xl overflow-hidden border border-white/8 shadow-2xl"
           style={{
             background: "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.6) 100%)",
