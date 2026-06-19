@@ -1,33 +1,47 @@
-import { useRef, useEffect, useCallback } from "react";
-import * as THREE from "three";
+/**
+ * InteractiveGlobe — Pure Canvas 2D implementation.
+ * No WebGL required. Works in all sandboxed environments.
+ *
+ * Features:
+ *  - Dotted land/ocean map projected onto sphere
+ *  - Atmosphere glow
+ *  - Animated glowing country markers
+ *  - Animated great-circle connection arcs
+ *  - Auto-rotation + mouse/touch drag
+ *  - Scroll zoom
+ */
+
+import { useRef, useEffect, memo } from "react";
 
 interface GlobeCountry {
   id: string;
   name: string;
-  flag: string;
+  flag?: string;
   active: boolean;
-  projects: number;
+  projects?: number;
 }
 
 interface InteractiveGlobeProps {
   countries: GlobeCountry[];
 }
 
-const COUNTRY_COORDS: Record<string, { lat: number; lng: number }> = {
-  India: { lat: 20.6, lng: 78.9 },
-  USA: { lat: 37.1, lng: -95.7 },
-  UK: { lat: 55.4, lng: -3.4 },
-  Canada: { lat: 56.1, lng: -106.3 },
-  Australia: { lat: -25.3, lng: 133.8 },
-  Germany: { lat: 51.2, lng: 10.5 },
-  Singapore: { lat: 1.4, lng: 103.8 },
-  UAE: { lat: 23.4, lng: 53.8 },
-  France: { lat: 46.2, lng: 2.2 },
-  Japan: { lat: 36.2, lng: 138.3 },
-  Brazil: { lat: -14.2, lng: -51.9 },
-  "South Africa": { lat: -30.6, lng: 22.9 },
+// ── Country lat/lng lookup ───────────────────────────────────────────────────
+const COUNTRY_COORDS: Record<string, [number, number]> = {
+  India:        [20.6,  78.9],
+  USA:          [37.1, -95.7],
+  UK:           [55.4,  -3.4],
+  Canada:       [56.1,-106.3],
+  Australia:    [-25.3, 133.8],
+  Germany:      [51.2,  10.5],
+  Singapore:    [ 1.4, 103.8],
+  UAE:          [23.4,  53.8],
+  France:       [46.2,   2.2],
+  Japan:        [36.2, 138.3],
+  Brazil:       [-14.2, -51.9],
+  "South Africa": [-30.6, 22.9],
 };
 
+// ── Simplified world SVG paths (1000×500 equirectangular space) ─────────────
 const WORLD_SVG_PATHS = [
   "M 105,85 L 130,62 L 165,55 L 205,62 L 235,85 L 255,108 L 265,138 L 248,168 L 225,200 L 198,228 L 175,255 L 152,248 L 135,228 L 115,200 L 98,168 L 88,138 L 95,108 Z",
   "M 220,42 L 248,35 L 268,38 L 272,52 L 258,62 L 235,62 L 220,55 Z",
@@ -42,364 +56,425 @@ const WORLD_SVG_PATHS = [
   "M 945,340 L 958,328 L 968,335 L 965,352 L 952,360 L 942,352 Z",
 ];
 
-function latLngToVec3(lat: number, lng: number, radius: number): THREE.Vector3 {
-  const phi = (90 - lat) * (Math.PI / 180);
-  const theta = (lng + 180) * (Math.PI / 180);
-  return new THREE.Vector3(
-    -radius * Math.sin(phi) * Math.cos(theta),
-    radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta)
-  );
+// ── Build land mask (512×256) ────────────────────────────────────────────────
+function buildLandMask(): Uint8Array {
+  const W = 512, H = 256;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const ctx = c.getContext("2d")!;
+  const sx = W / 1000, sy = H / 500;
+  ctx.fillStyle = "#fff";
+  WORLD_SVG_PATHS.forEach(p => {
+    ctx.fill(new Path2D(
+      p.replace(/([-]?\d+\.?\d*),([-]?\d+\.?\d*)/g,
+        (_,x,y) => `${(+x*sx).toFixed(1)},${(+y*sy).toFixed(1)}`)
+    ));
+  });
+  const rgba = ctx.getImageData(0, 0, W, H).data;
+  const mask = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) mask[i] = rgba[i * 4] > 128 ? 1 : 0;
+  return mask;
 }
 
-function createEarthTexture(): THREE.CanvasTexture {
-  const W = 2048;
-  const H = 1024;
-  const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d")!;
-
-  // Deep ocean background
-  const oceanGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W / 2);
-  oceanGrad.addColorStop(0, "#060d1a");
-  oceanGrad.addColorStop(1, "#02060f");
-  ctx.fillStyle = oceanGrad;
-  ctx.fillRect(0, 0, W, H);
-
-  // Scale factor from SVG 1000x500 → 2048x1024
-  const sx = W / 1000;
-  const sy = H / 500;
-
-  // Land — subtle silver/slate gradient
-  const landGrad = ctx.createLinearGradient(0, 0, W, H);
-  landGrad.addColorStop(0, "#3a4556");
-  landGrad.addColorStop(0.5, "#5a6880");
-  landGrad.addColorStop(1, "#2e3a4a");
-
-  ctx.fillStyle = landGrad;
-  WORLD_SVG_PATHS.forEach((pathStr) => {
-    const scaled = pathStr.replace(/(-?\d+\.?\d*),(-?\d+\.?\d*)/g, (_, x, y) =>
-      `${(parseFloat(x) * sx).toFixed(2)},${(parseFloat(y) * sy).toFixed(2)}`
-    );
-    ctx.fill(new Path2D(scaled));
-  });
-
-  // Land highlight
-  ctx.fillStyle = "rgba(160,180,210,0.12)";
-  WORLD_SVG_PATHS.forEach((pathStr) => {
-    const scaled = pathStr.replace(/(-?\d+\.?\d*),(-?\d+\.?\d*)/g, (_, x, y) =>
-      `${(parseFloat(x) * sx).toFixed(2)},${(parseFloat(y) * sy).toFixed(2)}`
-    );
-    ctx.fill(new Path2D(scaled));
-  });
-
-  // Subtle grid lines (latitude/longitude)
-  ctx.strokeStyle = "rgba(100,130,180,0.04)";
-  ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 12; i++) {
-    ctx.beginPath();
-    ctx.moveTo((i * W) / 12, 0);
-    ctx.lineTo((i * W) / 12, H);
-    ctx.stroke();
-  }
-  for (let i = 0; i <= 6; i++) {
-    ctx.beginPath();
-    ctx.moveTo(0, (i * H) / 6);
-    ctx.lineTo(W, (i * H) / 6);
-    ctx.stroke();
-  }
-
-  return new THREE.CanvasTexture(canvas);
+// Returns 1 if lat/lng is land, else 0
+function isLand(lat: number, lng: number, mask: Uint8Array): boolean {
+  const W = 512, H = 256;
+  const x = Math.round((lng + 180) / 360 * (W - 1));
+  const y = Math.round((90 - lat) / 180 * (H - 1));
+  const xi = Math.max(0, Math.min(W - 1, x));
+  const yi = Math.max(0, Math.min(H - 1, y));
+  return mask[yi * W + xi] === 1;
 }
 
-function createArcGeometry(
-  from: THREE.Vector3,
-  to: THREE.Vector3,
-  segments = 64,
-  arcHeight = 1.6
-): THREE.BufferGeometry {
-  const points: THREE.Vector3[] = [];
-  const mid = from.clone().add(to).multiplyScalar(0.5).normalize().multiplyScalar(arcHeight);
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const p = new THREE.Vector3()
-      .addScaledVector(from, (1 - t) * (1 - t))
-      .addScaledVector(mid, 2 * t * (1 - t))
-      .addScaledVector(to, t * t);
-    points.push(p);
-  }
-  return new THREE.BufferGeometry().setFromPoints(points);
+// ── 3D Sphere math ───────────────────────────────────────────────────────────
+interface Vec3 { x: number; y: number; z: number }
+
+function latLngTo3D(lat: number, lng: number): Vec3 {
+  const phi = (90 - lat) * Math.PI / 180;
+  const theta = (lng + 180) * Math.PI / 180;
+  return {
+    x: Math.sin(phi) * Math.cos(theta),
+    y: Math.cos(phi),
+    z: Math.sin(phi) * Math.sin(theta),
+  };
 }
 
-export default function InteractiveGlobe({ countries }: InteractiveGlobeProps) {
-  const mountRef = useRef<HTMLDivElement>(null);
-  const stateRef = useRef({
-    isDragging: false,
-    prevMouse: { x: 0, y: 0 },
-    autoRotateSpeed: 0.0012,
-    dragVelocity: { x: 0, y: 0 },
-    globeGroup: null as THREE.Group | null,
-  });
+function rotateY(v: Vec3, a: number): Vec3 {
+  const c = Math.cos(a), s = Math.sin(a);
+  return { x: v.x * c + v.z * s, y: v.y, z: -v.x * s + v.z * c };
+}
+function rotateX(v: Vec3, a: number): Vec3 {
+  const c = Math.cos(a), s = Math.sin(a);
+  return { x: v.x, y: v.y * c - v.z * s, z: v.y * s + v.z * c };
+}
+function rotate3D(v: Vec3, rx: number, ry: number): Vec3 {
+  return rotateX(rotateY(v, ry), rx);
+}
 
-  const setupScene = useCallback(() => {
-    const mount = mountRef.current;
-    if (!mount) return () => {};
+// Project rotated 3D point to 2D canvas
+function project2D(v: Vec3, R: number, cx: number, cy: number) {
+  return { px: cx + v.x * R, py: cy - v.y * R, visible: v.z > 0 };
+}
 
-    const W = mount.clientWidth;
-    const H = mount.clientHeight;
+// Great-circle interpolation for arcs
+function greatCirclePoints(a: Vec3, b: Vec3, steps = 60): Vec3[] {
+  const pts: Vec3[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const ax = a.x + (b.x - a.x) * t;
+    const ay = a.y + (b.y - a.y) * t;
+    const az = a.z + (b.z - a.z) * t;
+    const len = Math.sqrt(ax*ax + ay*ay + az*az) || 1;
+    pts.push({ x: ax/len, y: ay/len, z: az/len });
+  }
+  return pts;
+}
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(W, H);
-    renderer.setClearColor(0x000000, 0);
-    mount.appendChild(renderer.domElement);
-
-    // Scene & Camera
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
-    camera.position.z = 2.8;
-
-    // Stars
-    const starGeo = new THREE.BufferGeometry();
-    const starCount = 1500;
-    const starPos = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount * 3; i++) {
-      starPos[i] = (Math.random() - 0.5) * 80;
+// Pre-compute dot positions (lat/lng grid, sampled once)
+interface DotPoint { v: Vec3; land: boolean }
+function buildDotGrid(mask: Uint8Array): DotPoint[] {
+  const pts: DotPoint[] = [];
+  const step = 3; // degrees
+  for (let lat = -87; lat <= 87; lat += step) {
+    for (let lng = -180; lng < 180; lng += step) {
+      const v = latLngTo3D(lat, lng);
+      const land = isLand(lat, lng, mask);
+      pts.push({ v, land });
     }
-    starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-    const starMat = new THREE.PointsMaterial({ color: 0xaabbcc, size: 0.08, transparent: true, opacity: 0.6 });
-    scene.add(new THREE.Points(starGeo, starMat));
+  }
+  return pts;
+}
 
-    // Globe group
-    const globeGroup = new THREE.Group();
-    stateRef.current.globeGroup = globeGroup;
-    scene.add(globeGroup);
+// ── Main Component ───────────────────────────────────────────────────────────
+const InteractiveGlobe = memo(function InteractiveGlobe({ countries }: InteractiveGlobeProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const stateRef = useRef({
+    rotX: 0.25,
+    rotY: 0,
+    zoom: 1,
+    dragging: false,
+    lastMx: 0,
+    lastMy: 0,
+    velX: 0,
+    velY: 0,
+    t: 0,
+    dots: null as DotPoint[] | null,
+    mask: null as Uint8Array | null,
+    frame: 0,
+  });
 
-    // Earth sphere
-    const earthGeo = new THREE.SphereGeometry(1, 64, 64);
-    const earthTex = createEarthTexture();
-    const earthMat = new THREE.MeshPhongMaterial({
-      map: earthTex,
-      shininess: 25,
-      specular: new THREE.Color(0x334466),
-    });
-    const earthMesh = new THREE.Mesh(earthGeo, earthMat);
-    globeGroup.add(earthMesh);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const s = stateRef.current;
 
-    // Atmosphere glow (outer sphere)
-    const atmGeo = new THREE.SphereGeometry(1.035, 64, 64);
-    const atmMat = new THREE.MeshPhongMaterial({
-      color: 0x1a3a6a,
-      transparent: true,
-      opacity: 0.18,
-      side: THREE.FrontSide,
-      depthWrite: false,
-    });
-    globeGroup.add(new THREE.Mesh(atmGeo, atmMat));
+    // Build mask + dot grid once
+    if (!s.mask) s.mask = buildLandMask();
+    if (!s.dots) s.dots = buildDotGrid(s.mask);
 
-    // Outer glow ring
-    const glowGeo = new THREE.SphereGeometry(1.08, 64, 64);
-    const glowMat = new THREE.MeshPhongMaterial({
-      color: 0x2244aa,
-      transparent: true,
-      opacity: 0.06,
-      side: THREE.BackSide,
-      depthWrite: false,
-    });
-    globeGroup.add(new THREE.Mesh(glowGeo, glowMat));
+    // Active country coordinates
+    const activeCoords = countries
+      .filter(c => c.active && COUNTRY_COORDS[c.name])
+      .map(c => ({ ...c, v: latLngTo3D(COUNTRY_COORDS[c.name][0], COUNTRY_COORDS[c.name][1]) }));
 
-    // Lighting
-    const ambient = new THREE.AmbientLight(0x223355, 1.2);
-    scene.add(ambient);
-    const sun = new THREE.DirectionalLight(0xd0e0ff, 2.4);
-    sun.position.set(5, 3, 5);
-    scene.add(sun);
-    const rim = new THREE.DirectionalLight(0x445577, 0.8);
-    rim.position.set(-4, -2, -3);
-    scene.add(rim);
-
-    // Country markers
-    const activeCountries = countries.filter(c => c.active);
-    const markerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const glowMarkerMat = new THREE.MeshBasicMaterial({
-      color: 0xaaccff,
-      transparent: true,
-      opacity: 0.4,
-    });
-
-    activeCountries.forEach(country => {
-      const coords = COUNTRY_COORDS[country.name];
-      if (!coords) return;
-      const pos = latLngToVec3(coords.lat, coords.lng, 1.005);
-
-      // Core dot
-      const dotGeo = new THREE.SphereGeometry(0.012, 8, 8);
-      const dot = new THREE.Mesh(dotGeo, markerMat);
-      dot.position.copy(pos);
-      globeGroup.add(dot);
-
-      // Glow halo
-      const haloGeo = new THREE.SphereGeometry(0.025, 8, 8);
-      const halo = new THREE.Mesh(haloGeo, glowMarkerMat.clone());
-      halo.position.copy(pos);
-      globeGroup.add(halo);
-    });
-
-    // Connection arcs between active countries
-    const arcMat = new THREE.LineBasicMaterial({
-      color: 0xc0d8ff,
-      transparent: true,
-      opacity: 0.35,
-    });
-
-    for (let i = 0; i < activeCountries.length; i++) {
-      for (let j = i + 1; j < activeCountries.length; j++) {
-        const a = COUNTRY_COORDS[activeCountries[i].name];
-        const b = COUNTRY_COORDS[activeCountries[j].name];
-        if (!a || !b) continue;
-        const va = latLngToVec3(a.lat, a.lng, 1.005);
-        const vb = latLngToVec3(b.lat, b.lng, 1.005);
-        const arcGeo = createArcGeometry(va, vb);
-        const mat = arcMat.clone();
-        const line = new THREE.Line(arcGeo, mat);
-        globeGroup.add(line);
+    // Connection pairs
+    const pairs: [typeof activeCoords[0], typeof activeCoords[0]][] = [];
+    for (let i = 0; i < activeCoords.length; i++) {
+      for (let j = i + 1; j < activeCoords.length; j++) {
+        pairs.push([activeCoords[i], activeCoords[j]]);
       }
     }
 
-    // Animated arc pulses
-    const pulseMeshes: { line: THREE.Line; speed: number; offset: number; mat: THREE.LineBasicMaterial }[] = [];
-    activeCountries.forEach((country, i) => {
-      const next = activeCountries[(i + 1) % activeCountries.length];
-      if (!next || country.name === next.name) return;
-      const a = COUNTRY_COORDS[country.name];
-      const b = COUNTRY_COORDS[next.name];
-      if (!a || !b) return;
-      const va = latLngToVec3(a.lat, a.lng, 1.01);
-      const vb = latLngToVec3(b.lat, b.lng, 1.01);
-      const arcGeo = createArcGeometry(va, vb, 32, 1.55);
-      const pulseMat = new THREE.LineBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0,
+    let animId: number;
+
+    const draw = () => {
+      s.frame++;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx || !s.dots) return;
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const cx = W / 2;
+      const cy = H / 2;
+      const R = Math.min(W, H) * 0.38 * s.zoom;
+
+      // Auto-rotate
+      if (!s.dragging) {
+        s.rotY += 0.004;
+        s.velX *= 0.9;
+        s.velY *= 0.9;
+        s.rotX += s.velX;
+        s.rotY += s.velY;
+        s.rotX = Math.max(-0.6, Math.min(0.6, s.rotX));
+      }
+      s.t += 0.016;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // ── Stars ──────────────────────────────────────────
+      ctx.save();
+      // Only draw stars occasionally for performance
+      if (s.frame === 1) {
+        (canvas as any)._stars = Array.from({ length: 180 }, () => ({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.2 + 0.2,
+          a: Math.random() * 0.5 + 0.1,
+        }));
+      }
+      const stars: {x:number,y:number,r:number,a:number}[] = (canvas as any)._stars || [];
+      stars.forEach(star => {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180,200,255,${star.a})`;
+        ctx.fill();
       });
-      const line = new THREE.Line(arcGeo, pulseMat);
-      globeGroup.add(line);
-      pulseMeshes.push({ line, speed: 0.6 + Math.random() * 0.4, offset: Math.random() * Math.PI * 2, mat: pulseMat });
-    });
+      ctx.restore();
 
-    // Mouse drag
-    const onMouseDown = (e: MouseEvent) => {
-      stateRef.current.isDragging = true;
-      stateRef.current.prevMouse = { x: e.clientX, y: e.clientY };
-      stateRef.current.dragVelocity = { x: 0, y: 0 };
-    };
-    const onMouseMove = (e: MouseEvent) => {
-      if (!stateRef.current.isDragging) return;
-      const dx = e.clientX - stateRef.current.prevMouse.x;
-      const dy = e.clientY - stateRef.current.prevMouse.y;
-      stateRef.current.prevMouse = { x: e.clientX, y: e.clientY };
-      stateRef.current.dragVelocity = { x: dx * 0.005, y: dy * 0.005 };
-      globeGroup.rotation.y += dx * 0.005;
-      globeGroup.rotation.x += dy * 0.005;
-      globeGroup.rotation.x = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, globeGroup.rotation.x));
-    };
-    const onMouseUp = () => { stateRef.current.isDragging = false; };
+      // ── Outer atmosphere ring ──────────────────────────
+      const atmGrad = ctx.createRadialGradient(cx, cy, R * 0.88, cx, cy, R * 1.22);
+      atmGrad.addColorStop(0, "rgba(40, 80, 180, 0.18)");
+      atmGrad.addColorStop(0.5, "rgba(20, 50, 140, 0.08)");
+      atmGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * 1.22, 0, Math.PI * 2);
+      ctx.fillStyle = atmGrad;
+      ctx.fill();
 
-    // Touch support
-    let lastTouch = { x: 0, y: 0 };
+      // ── Ocean sphere ───────────────────────────────────
+      const oceanGrad = ctx.createRadialGradient(
+        cx - R * 0.3, cy - R * 0.3, R * 0.1,
+        cx, cy, R
+      );
+      oceanGrad.addColorStop(0,   "rgba(14, 26, 55, 1)");
+      oceanGrad.addColorStop(0.5, "rgba(6, 12, 30, 1)");
+      oceanGrad.addColorStop(1,   "rgba(2, 5, 15, 1)");
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.fillStyle = oceanGrad;
+      ctx.fill();
+
+      // ── Clip to sphere ─────────────────────────────────
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.clip();
+
+      // ── Land dots ──────────────────────────────────────
+      const landColor = "rgba(140, 165, 200, 0.75)";
+      const oceanDotColor = "rgba(30, 50, 100, 0.25)";
+
+      s.dots.forEach(({ v, land }) => {
+        const rv = rotate3D(v, s.rotX, s.rotY);
+        if (rv.z < 0) return; // back side
+
+        const { px, py } = project2D(rv, R, cx, cy);
+
+        // Edge dimming: darker near limb
+        const edge = Math.max(0, rv.z);
+        const dotR = land ? 1.5 : 1.0;
+
+        if (land) {
+          const alpha = 0.3 + edge * 0.65;
+          ctx.beginPath();
+          ctx.arc(px, py, dotR, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(140, 165, 200, ${alpha.toFixed(2)})`;
+          ctx.fill();
+        } else if (edge > 0.05) {
+          ctx.beginPath();
+          ctx.arc(px, py, 0.8, 0, Math.PI * 2);
+          ctx.fillStyle = oceanDotColor;
+          ctx.fill();
+        }
+      });
+
+      // ── Connection arcs ────────────────────────────────
+      pairs.forEach(([a, b], idx) => {
+        const gcPts = greatCirclePoints(a.v, b.v, 50);
+        const offset = (s.t * 0.4 + idx * 0.7) % 1;
+        const pulseWidth = 0.25;
+
+        ctx.beginPath();
+        let first = true;
+        gcPts.forEach(pt => {
+          const rv = rotate3D(pt, s.rotX, s.rotY);
+          if (rv.z < -0.1) { first = true; return; }
+          const { px, py } = project2D(rv, R, cx, cy);
+          if (first) { ctx.moveTo(px, py); first = false; }
+          else ctx.lineTo(px, py);
+        });
+        ctx.strokeStyle = "rgba(120, 150, 220, 0.18)";
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        // Animated pulse along arc
+        const start = Math.floor(offset * 50);
+        const end = Math.min(50, start + Math.floor(pulseWidth * 50));
+        ctx.beginPath();
+        let pFirst = true;
+        for (let i = start; i <= end; i++) {
+          const pt = gcPts[i % 50];
+          if (!pt) continue;
+          const rv = rotate3D(pt, s.rotX, s.rotY);
+          if (rv.z < 0) { pFirst = true; continue; }
+          const { px, py } = project2D(rv, R, cx, cy);
+          if (pFirst) { ctx.moveTo(px, py); pFirst = false; }
+          else ctx.lineTo(px, py);
+        }
+        // Bright pulse stroke
+        ctx.strokeStyle = "rgba(200, 220, 255, 0.75)";
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+      });
+
+      ctx.restore(); // end sphere clip
+
+      // ── Sphere edge highlight / atmosphere inner ───────
+      const edgeGrad = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R);
+      edgeGrad.addColorStop(0, "rgba(0,0,0,0)");
+      edgeGrad.addColorStop(0.75, "rgba(0,0,0,0)");
+      edgeGrad.addColorStop(1, "rgba(30, 60, 160, 0.35)");
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.fillStyle = edgeGrad;
+      ctx.fill();
+
+      // Light specular highlight
+      const specGrad = ctx.createRadialGradient(
+        cx - R * 0.35, cy - R * 0.35, 0,
+        cx - R * 0.35, cy - R * 0.35, R * 0.55
+      );
+      specGrad.addColorStop(0, "rgba(200, 220, 255, 0.07)");
+      specGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.fillStyle = specGrad;
+      ctx.fill();
+
+      // ── Country markers (outside clip) ────────────────
+      activeCoords.forEach((c, idx) => {
+        const rv = rotate3D(c.v, s.rotX, s.rotY);
+        if (rv.z < 0.08) return; // not visible
+        const { px, py } = project2D(rv, R, cx, cy);
+
+        // Pulse ring
+        const pulsePhase = (s.t * 1.5 + idx * 1.1) % (Math.PI * 2);
+        const pulseScale = 1 + Math.sin(pulsePhase) * 0.6;
+        const pulseAlpha = Math.max(0, Math.sin(pulsePhase + 0.3)) * 0.45;
+
+        ctx.beginPath();
+        ctx.arc(px, py, 8 * pulseScale, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(100, 200, 255, ${pulseAlpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Core glow
+        const coreGrad = ctx.createRadialGradient(px, py, 0, px, py, 6);
+        coreGrad.addColorStop(0, "rgba(200, 230, 255, 1)");
+        coreGrad.addColorStop(0.4, "rgba(120, 180, 255, 0.8)");
+        coreGrad.addColorStop(1, "rgba(60, 120, 220, 0)");
+        ctx.beginPath();
+        ctx.arc(px, py, 6, 0, Math.PI * 2);
+        ctx.fillStyle = coreGrad;
+        ctx.fill();
+
+        // White dot
+        ctx.beginPath();
+        ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+      });
+
+      animId = requestAnimationFrame(draw);
+    };
+
+    // ── Resize handler ─────────────────────────────────
+    const onResize = () => {
+      if (!canvas) return;
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    onResize();
+    const ro = new ResizeObserver(onResize);
+    ro.observe(canvas);
+
+    // ── Mouse events ───────────────────────────────────
+    const onDown = (e: MouseEvent) => {
+      s.dragging = true;
+      s.lastMx = e.clientX;
+      s.lastMy = e.clientY;
+      s.velX = 0; s.velY = 0;
+      canvas.style.cursor = "grabbing";
+    };
+    const onMove = (e: MouseEvent) => {
+      if (!s.dragging) return;
+      const dx = e.clientX - s.lastMx;
+      const dy = e.clientY - s.lastMy;
+      s.lastMx = e.clientX; s.lastMy = e.clientY;
+      s.velX = dy * 0.004;
+      s.velY = dx * 0.006;
+      s.rotX = Math.max(-0.6, Math.min(0.6, s.rotX + dy * 0.004));
+      s.rotY += dx * 0.006;
+    };
+    const onUp = () => { s.dragging = false; canvas.style.cursor = "grab"; };
+
+    // Touch events
+    let lastTx = 0, lastTy = 0;
     const onTouchStart = (e: TouchEvent) => {
-      stateRef.current.isDragging = true;
-      lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      s.dragging = true;
+      lastTx = e.touches[0].clientX;
+      lastTy = e.touches[0].clientY;
+      s.velX = 0; s.velY = 0;
     };
     const onTouchMove = (e: TouchEvent) => {
-      if (!stateRef.current.isDragging) return;
-      const dx = e.touches[0].clientX - lastTouch.x;
-      const dy = e.touches[0].clientY - lastTouch.y;
-      lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      globeGroup.rotation.y += dx * 0.005;
-      globeGroup.rotation.x += dy * 0.005;
-      globeGroup.rotation.x = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, globeGroup.rotation.x));
+      if (!s.dragging) return;
+      const dx = e.touches[0].clientX - lastTx;
+      const dy = e.touches[0].clientY - lastTy;
+      lastTx = e.touches[0].clientX;
+      lastTy = e.touches[0].clientY;
+      s.rotX = Math.max(-0.6, Math.min(0.6, s.rotX + dy * 0.005));
+      s.rotY += dx * 0.006;
     };
-    const onTouchEnd = () => { stateRef.current.isDragging = false; };
+    const onTouchEnd = () => { s.dragging = false; };
 
-    // Zoom via wheel
+    // Zoom
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      camera.position.z = Math.max(1.8, Math.min(5, camera.position.z + e.deltaY * 0.002));
+      s.zoom = Math.max(0.6, Math.min(2.5, s.zoom - e.deltaY * 0.001));
     };
 
-    mount.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    mount.addEventListener("touchstart", onTouchStart, { passive: true });
-    mount.addEventListener("touchmove", onTouchMove, { passive: true });
-    mount.addEventListener("touchend", onTouchEnd);
-    mount.addEventListener("wheel", onWheel, { passive: false });
+    canvas.addEventListener("mousedown", onDown);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    canvas.addEventListener("touchstart", onTouchStart, { passive: true });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: true });
+    canvas.addEventListener("touchend", onTouchEnd);
+    canvas.addEventListener("wheel", onWheel, { passive: false });
 
-    // Animate
-    let animId: number;
-    let t = 0;
-    const animate = () => {
-      animId = requestAnimationFrame(animate);
-      t += 0.016;
-
-      if (!stateRef.current.isDragging) {
-        globeGroup.rotation.y += stateRef.current.autoRotateSpeed;
-        // Momentum decay
-        stateRef.current.dragVelocity.x *= 0.95;
-        stateRef.current.dragVelocity.y *= 0.95;
-      }
-
-      // Animate pulse arcs
-      pulseMeshes.forEach(({ mat, speed, offset }) => {
-        const pulse = Math.sin(t * speed + offset);
-        mat.opacity = Math.max(0, pulse * 0.7);
-      });
-
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    // Resize
-    const handleResize = () => {
-      if (!mount) return;
-      const nW = mount.clientWidth;
-      const nH = mount.clientHeight;
-      camera.aspect = nW / nH;
-      camera.updateProjectionMatrix();
-      renderer.setSize(nW, nH);
-    };
-    window.addEventListener("resize", handleResize);
+    draw();
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-      mount.removeEventListener("mousedown", onMouseDown);
-      mount.removeEventListener("touchstart", onTouchStart);
-      mount.removeEventListener("touchmove", onTouchMove);
-      mount.removeEventListener("touchend", onTouchEnd);
-      mount.removeEventListener("wheel", onWheel);
-      renderer.dispose();
-      if (mount.contains(renderer.domElement)) {
-        mount.removeChild(renderer.domElement);
-      }
+      ro.disconnect();
+      canvas.removeEventListener("mousedown", onDown);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchmove", onTouchMove);
+      canvas.removeEventListener("touchend", onTouchEnd);
+      canvas.removeEventListener("wheel", onWheel);
     };
   }, [countries]);
 
-  useEffect(() => {
-    const cleanup = setupScene();
-    return cleanup;
-  }, [setupScene]);
-
   return (
-    <div
-      ref={mountRef}
-      className="w-full h-full cursor-grab active:cursor-grabbing"
-      style={{ background: "transparent" }}
+    <canvas
+      ref={canvasRef}
+      className="w-full h-full"
+      style={{ cursor: "grab", display: "block" }}
     />
   );
-}
+});
+
+export default InteractiveGlobe;
