@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminDataProvider } from "@/context/AdminDataContext";
 import { useAdminData } from "@/hooks/useAdminData";
 import { ThemeProvider } from "next-themes";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -64,6 +65,7 @@ function App() {
               <Router />
             </WouterRouter>
             <Toaster />
+            <SpeedInsights />
           </TooltipProvider>
         </AdminDataProvider>
       </QueryClientProvider>
