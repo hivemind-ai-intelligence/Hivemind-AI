@@ -38,6 +38,54 @@ export interface PricingData {
   recommended: boolean;
 }
 
+export interface WorldCountry {
+  id: string;
+  name: string;
+  flag: string;
+  active: boolean;
+  projects: number;
+  x: number; // 0-100 map position %
+  y: number;
+}
+
+export interface AITrait {
+  id: string;
+  name: string;
+  level: number; // 0-100
+}
+
+export interface AIFeature {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface AITimelineEvent {
+  id: string;
+  year: string;
+  title: string;
+  description: string;
+}
+
+export interface AILanguage {
+  id: string;
+  name: string;
+  level: string;
+}
+
+export interface AITeamMember {
+  id: string;
+  name: string;
+  role: string;
+  icon: string;
+}
+
+export interface AIActivityItem {
+  id: string;
+  action: string;
+}
+
 export interface AdminData {
   // BRANDING
   brandName: string;
@@ -85,6 +133,45 @@ export interface AdminData {
   // SEO
   seoTitle: string;
   seoDescription: string;
+
+  // WORLD MAP
+  worldCountries: WorldCountry[];
+  worldActiveRegions: number;
+  worldProjects: number;
+  worldLanguages: number;
+  worldAICoverage: string;
+
+  // HIVEMIND AI IDENTITY
+  hivemindAIName: string;
+  hivemindAITagline: string;
+  hivemindAIDescription: string;
+  hivemindAIStatus: string;
+  hivemindAIRole: string;
+  hivemindAIVersion: string;
+  hivemindAIAvailability: string;
+  hivemindAIIconDataUrl: string | null;
+  hivemindAICoverDataUrl: string | null;
+  hivemindAIShowVerifiedBadge: boolean;
+  hivemindAIShowCoFounderBadge: boolean;
+  hivemindAICustomBadge: string;
+  hivemindAIPrimaryBtnText: string;
+  hivemindAIPrimaryBtnLink: string;
+  hivemindAISecondaryBtnText: string;
+  hivemindAISecondaryBtnLink: string;
+
+  // HIVEMIND AI CONTENT
+  hivemindAITraits: AITrait[];
+  hivemindAIFeatures: AIFeature[];
+  hivemindAITimeline: AITimelineEvent[];
+  hivemindAILanguages: AILanguage[];
+  hivemindAITeam: AITeamMember[];
+  hivemindAIActivity: AIActivityItem[];
+
+  // HIVEMIND AI STORY
+  hivemindAIOrigin: string;
+  hivemindAIMission: string;
+  hivemindAIVision: string;
+  hivemindAIGrowthStory: string;
 }
 
 const defaultData: AdminData = {
@@ -97,8 +184,8 @@ const defaultData: AdminData = {
   heroHeadline: "Building The Future Between Humans And AI",
   heroSubheadline: "HiveMind creates websites, AI systems, automation tools and digital infrastructure for the next generation of creators and businesses.",
 
-  founderName: "Alex Carter",
-  founderTitle: "Founder and CEO, HiveMind",
+  founderName: "Vasudev",
+  founderTitle: "Founder & CEO, Hivemind AI",
   founderTagline: "Bridging the gap between human creativity and artificial intelligence.",
   founderBio: "Building the bridge between humans and artificial intelligence. 5+ years crafting digital experiences for the next generation of creators and businesses.",
   founderYears: "5+",
@@ -164,7 +251,98 @@ const defaultData: AdminData = {
   contactLocation: "San Francisco, CA",
 
   seoTitle: "Hivemind AI | Premium AI Agency & Development",
-  seoDescription: "Hivemind AI creates websites, AI systems, automation tools and digital infrastructure for the next generation of creators and businesses."
+  seoDescription: "Hivemind AI creates websites, AI systems, automation tools and digital infrastructure for the next generation of creators and businesses.",
+
+  // WORLD MAP
+  worldCountries: [
+    { id: "1", name: "India", flag: "🇮🇳", active: true, projects: 45, x: 68, y: 52 },
+    { id: "2", name: "USA", flag: "🇺🇸", active: true, projects: 38, x: 18, y: 37 },
+    { id: "3", name: "UK", flag: "🇬🇧", active: true, projects: 22, x: 48, y: 28 },
+    { id: "4", name: "Canada", flag: "🇨🇦", active: false, projects: 12, x: 17, y: 24 },
+    { id: "5", name: "Australia", flag: "🇦🇺", active: true, projects: 18, x: 83, y: 70 },
+    { id: "6", name: "Germany", flag: "🇩🇪", active: false, projects: 8, x: 51, y: 27 },
+    { id: "7", name: "Singapore", flag: "🇸🇬", active: true, projects: 15, x: 78, y: 58 },
+    { id: "8", name: "UAE", flag: "🇦🇪", active: false, projects: 6, x: 62, y: 48 },
+  ],
+  worldActiveRegions: 5,
+  worldProjects: 200,
+  worldLanguages: 12,
+  worldAICoverage: "24/7",
+
+  // HIVEMIND AI IDENTITY
+  hivemindAIName: "HiveMind AI",
+  hivemindAITagline: "The Intelligent Digital Co-Founder",
+  hivemindAIDescription: "Built to assist, automate, collaborate, and scale digital ecosystems through intelligent decision-making and continuous support.",
+  hivemindAIStatus: "Online",
+  hivemindAIRole: "Digital Co-Founder",
+  hivemindAIVersion: "v2.4.1",
+  hivemindAIAvailability: "24/7",
+  hivemindAIIconDataUrl: null,
+  hivemindAICoverDataUrl: null,
+  hivemindAIShowVerifiedBadge: true,
+  hivemindAIShowCoFounderBadge: true,
+  hivemindAICustomBadge: "",
+  hivemindAIPrimaryBtnText: "Explore Features",
+  hivemindAIPrimaryBtnLink: "#ai-features",
+  hivemindAISecondaryBtnText: "Contact Team",
+  hivemindAISecondaryBtnLink: "#contact",
+
+  // HIVEMIND AI CONTENT
+  hivemindAITraits: [
+    { id: "1", name: "Friendly", level: 90 },
+    { id: "2", name: "Professional", level: 95 },
+    { id: "3", name: "Creative", level: 85 },
+    { id: "4", name: "Analytical", level: 98 },
+    { id: "5", name: "Adaptive", level: 92 },
+    { id: "6", name: "Multilingual", level: 88 },
+  ],
+  hivemindAIFeatures: [
+    { id: "1", icon: "Globe", title: "Website Assistance", description: "Guides clients through design, development, and deployment of premium digital experiences." },
+    { id: "2", icon: "Zap", title: "Business Automation", description: "Automates repetitive workflows, integrations, and operations across your entire stack." },
+    { id: "3", icon: "Bot", title: "Discord Management", description: "Manages communities, moderates channels, and drives engagement for your server." },
+    { id: "4", icon: "MessageSquare", title: "Client Support", description: "Provides 24/7 intelligent support, answering queries and resolving issues instantly." },
+    { id: "5", icon: "Brain", title: "Knowledge Systems", description: "Builds structured knowledge bases and intelligent retrieval systems for your team." },
+    { id: "6", icon: "Cpu", title: "Workflow Optimization", description: "Analyzes and optimizes your business workflows for maximum efficiency and throughput." },
+    { id: "7", icon: "PenTool", title: "Content Creation", description: "Generates on-brand copy, social media posts, and marketing assets on demand." },
+    { id: "8", icon: "Rocket", title: "Project Guidance", description: "Advises on timelines, scoping, and execution strategy for complex digital projects." },
+    { id: "9", icon: "Sparkles", title: "AI Consultation", description: "Provides strategic AI adoption roadmaps tailored to your industry and goals." },
+  ],
+  hivemindAITimeline: [
+    { id: "1", year: "2026", title: "Created Inside HiveMind", description: "HiveMind AI was born as an internal intelligence layer to assist with client operations and strategy." },
+    { id: "2", year: "2027", title: "Advanced Automation", description: "Expanded capabilities to handle complex multi-step automations across platforms and APIs." },
+    { id: "3", year: "2028", title: "Multi-Platform Expansion", description: "Deployed across web, Discord, mobile, and enterprise environments globally." },
+    { id: "4", year: "2030", title: "Digital Co-Founder Network", description: "Evolved into a full Digital Co-Founder network, serving businesses across 50+ countries." },
+  ],
+  hivemindAILanguages: [
+    { id: "1", name: "English", level: "Native" },
+    { id: "2", name: "Hindi", level: "Fluent" },
+    { id: "3", name: "Spanish", level: "Advanced" },
+    { id: "4", name: "French", level: "Intermediate" },
+    { id: "5", name: "German", level: "Intermediate" },
+    { id: "6", name: "Japanese", level: "Basic" },
+    { id: "7", name: "Arabic", level: "Basic" },
+    { id: "8", name: "Mandarin", level: "Basic" },
+  ],
+  hivemindAITeam: [
+    { id: "1", name: "HiveMind Analyst", role: "Data Analysis & Market Intelligence", icon: "BarChart3" },
+    { id: "2", name: "HiveMind Developer", role: "Code Generation & Technical Architecture", icon: "Code2" },
+    { id: "3", name: "HiveMind Strategist", role: "Business Strategy & Growth Planning", icon: "Target" },
+    { id: "4", name: "HiveMind Automation Expert", role: "Workflow Automation & System Integration", icon: "Zap" },
+  ],
+  hivemindAIActivity: [
+    { id: "1", action: "HiveMind analyzed website traffic patterns for 3 clients" },
+    { id: "2", action: "HiveMind generated a growth strategy for Q3 2026" },
+    { id: "3", action: "HiveMind updated the project roadmap based on client feedback" },
+    { id: "4", action: "HiveMind completed automation setup for Nova E-Commerce" },
+    { id: "5", action: "HiveMind processed 248 support queries with 97% resolution rate" },
+    { id: "6", action: "HiveMind optimized API response time by 40% across all systems" },
+  ],
+
+  // HIVEMIND AI STORY
+  hivemindAIOrigin: "HiveMind AI was born from a singular vision: to give every business access to enterprise-grade intelligence. Founded inside HiveMind by Vasudev, the AI began as an internal assistant before evolving into a full Digital Co-Founder.",
+  hivemindAIMission: "To democratize access to advanced AI capabilities, empowering creators, startups, and enterprises to build faster, smarter, and more efficiently than ever before.",
+  hivemindAIVision: "A world where every business — regardless of size — has access to a dedicated AI co-founder that understands their goals, automates their operations, and accelerates their growth.",
+  hivemindAIGrowthStory: "From a single AI assistant to a comprehensive Digital Co-Founder system, HiveMind AI has grown alongside the agency — processing millions of tasks, serving clients across continents, and continuously evolving through real-world deployments.",
 };
 
 interface AdminContextType {

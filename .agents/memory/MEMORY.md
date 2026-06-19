@@ -1,0 +1,2 @@
+- [Hivemind admin data pattern](hivemind-admin.md) — flat AdminData in AdminDataContext, hook re-exported ONLY from hooks/useAdminData.ts (never from context directly)
+- [Hivemind nav links](hivemind-nav.md) — navLinks array supports optional isRoute:true to use wouter Link instead of <a> tag; hash-links use plain <a>

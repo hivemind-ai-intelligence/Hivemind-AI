@@ -9,6 +9,7 @@ import { ThemeProvider } from "next-themes";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import AdminDashboard from "@/pages/AdminDashboard";
+import HivemindAI from "@/pages/HivemindAI";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/hivemind-ai" component={HivemindAI} />
       <Route component={NotFound} />
     </Switch>
   );

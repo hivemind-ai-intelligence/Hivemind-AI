@@ -25,6 +25,7 @@ export default function Navbar() {
     { name: "Projects", href: "#projects" },
     { name: "About", href: "#about" },
     { name: "Pricing", href: "#pricing" },
+    { name: "HiveMind AI", href: "/hivemind-ai", isRoute: true },
   ];
 
   return (
@@ -49,13 +50,23 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.name}
-              </a>
+              link.isRoute ? (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ) : (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {link.name}
+                </a>
+              )
             ))}
           </nav>
 
@@ -96,14 +107,25 @@ export default function Navbar() {
         <div className="md:hidden absolute top-full left-0 right-0 p-4 mt-2">
           <div className="glass-panel rounded-2xl p-4 flex flex-col gap-4 bg-background/95 backdrop-blur-xl">
             {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium p-2 rounded-lg hover:bg-foreground/5 text-foreground"
-              >
-                {link.name}
-              </a>
+              link.isRoute ? (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-sm font-medium p-2 rounded-lg hover:bg-foreground/5 text-foreground"
+                >
+                  {link.name}
+                </Link>
+              ) : (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-sm font-medium p-2 rounded-lg hover:bg-foreground/5 text-foreground"
+                >
+                  {link.name}
+                </a>
+              )
             ))}
             <div className="h-px bg-border my-2"></div>
             <div className="flex items-center justify-between p-2">

@@ -211,8 +211,8 @@ export default function AIChat() {
   <User className="w-4 h-4" />
 ) : (
   <div className="w-6 h-6 flex items-center justify-center rounded-md border border-slate-400 bg-black text-slate-300 shadow-[0_0_15px_rgba(192,192,192,0.4)]">
-  ⬢
-</div>
+    AI
+  </div>
 )} 
                   </div>
                   <div className={`p-3 text-sm rounded-2xl ${
