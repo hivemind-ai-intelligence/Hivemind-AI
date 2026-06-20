@@ -1,0 +1,184 @@
+UPGRADE THE EXISTING HIVEMIND AI WEBSITE.
+
+IMPORTANT:
+
+- Do NOT redesign the entire website.
+- Do NOT remove, replace, break or modify existing sections.
+- Preserve all current animations, styling, pages, responsiveness and functionality.
+- Only ADD and UPGRADE features.
+- Everything must remain mobile responsive and production ready.
+
+========================
+GLOBAL PRESENCE V4
+
+Replace the current globe section with a premium enterprise-level interactive globe.
+
+Requirements:
+
+1. Realistic 3D Globe
+
+- Use Three.js
+- High quality realistic Earth
+- Atmosphere glow
+- Subtle blue-white lighting
+- Premium Apple / Tesla / Vercel aesthetic
+- No neon cyberpunk colors
+- Black hole style background
+
+2. Interaction
+
+- User can drag and rotate globe
+- Pinch zoom on mobile
+- Mouse wheel zoom on desktop
+- Auto rotate when idle
+- Stop rotating while user interacts
+- Resume rotation after inactivity
+
+3. Premium Effects
+
+- Animated network connections
+- Light trails between countries
+- Pulsing connection nodes
+- Real-time glowing routes
+- Floating particles
+- Smooth camera movement
+
+4. Active Countries
+   Show animated connection points:
+
+India
+USA
+UK
+Canada
+Australia
+Germany
+Singapore
+UAE
+
+5. Live Statistics
+   Editable values:
+
+Active Regions
+Projects Delivered
+Languages Supported
+AI Coverage
+
+All values must come from Admin Dashboard.
+
+========================
+ADMIN DASHBOARD
+
+Create a complete secure Admin Dashboard.
+
+Route:
+/admin
+
+Password protected.
+
+Dashboard Features:
+
+1. Globe Manager
+
+- Add country
+- Remove country
+- Edit country
+- Change coordinates
+- Enable/disable country
+- Change connection routes
+
+2. Statistics Manager
+
+- Active Regions
+- Projects
+- Languages
+- AI Coverage
+
+3. Content Manager
+   Editable without touching code:
+
+Hero Section
+About Section
+Services
+Pricing
+Footer
+Badges
+Company Information
+
+4. Media Manager
+   Upload:
+
+- Logos
+- Icons
+- Backgrounds
+
+5. Testimonial Manager
+   Add/Edit/Delete testimonials
+
+6. Team Manager
+   Add/Edit/Delete team members
+
+7. Analytics Dashboard
+   Show:
+   Visitors
+   Clicks
+   Form submissions
+   Countries
+
+========================
+COMPANY TRUST SYSTEM
+
+Add Premium Trust Badges:
+
+✓ Verified AI Company
+✓ Enterprise Ready
+✓ Security Verified
+✓ AI Powered
+✓ Global Network Active
+✓ Future Ready
+
+Editable from dashboard.
+
+========================
+PREMIUM FOOTER
+
+HiveMind AI™
+
+Humans. AI. One Mind.
+
+Verified AI Company • Enterprise Ready • Security Verified • Future Ready
+
+© 2026 HiveMind AI. All Rights Reserved.
+
+Built For The Next Generation Of Digital Intelligence.
+
+========================
+PERFORMANCE
+
+Requirements:
+
+- Lighthouse Score 95+
+- Mobile optimized
+- Lazy loading
+- Smooth animations
+- Fast loading
+- No broken components
+- No existing feature removal
+- No console errors
+
+========================
+FINAL RESULT
+
+The website should feel like a mix of:
+
+Apple
+Tesla
+Vercel
+OpenAI
+Stripe
+
+Minimal.
+Premium.
+Enterprise.
+Future-ready.
+
+Keep everything working and only upgrade the experience.

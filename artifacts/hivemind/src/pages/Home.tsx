@@ -13,6 +13,7 @@ import Pricing from "@/components/Pricing";
 import EnquiryForm from "@/components/EnquiryForm";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import TrustBadgesBar from "@/components/TrustBadgesBar";
 import CustomCursor from "@/components/CustomCursor";
 import { Loader2 } from "lucide-react";
 
@@ -78,6 +79,7 @@ export default function Home() {
             <Contact />
           </div>
           
+          <TrustBadgesBar />
           <Footer />
         </main>
       )}

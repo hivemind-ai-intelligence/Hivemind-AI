@@ -1,2 +1,4 @@
 - [Hivemind admin data pattern](hivemind-admin.md) — flat AdminData in AdminDataContext, hook re-exported ONLY from hooks/useAdminData.ts (never from context directly)
 - [Hivemind nav links](hivemind-nav.md) — navLinks array supports optional isRoute:true to use wouter Link instead of <a> tag; hash-links use plain <a>
+- [Hivemind globe implementation](hivemind-globe.md) — Three.js WebGL globe with Canvas 2D fallback; WebGL works in production but not Replit sandbox; both verified working
+- [Hivemind trust badges](hivemind-trust-badges.md) — TrustBadge in AdminData; shown in TrustBadgesBar (above footer) and Footer; editable in Admin Dashboard "Trust Badges" tab

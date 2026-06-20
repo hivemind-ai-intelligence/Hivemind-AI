@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAdminData } from "@/hooks/useAdminData";
-import type { AdminData, ServiceData, ProjectData, TestimonialData, PricingData, WorldCountry, AITrait, AIFeature, AITimelineEvent, AILanguage, AITeamMember, AIActivityItem } from "@/context/AdminDataContext";
+import type { AdminData, ServiceData, ProjectData, TestimonialData, PricingData, WorldCountry, TrustBadge, AITrait, AIFeature, AITimelineEvent, AILanguage, AITeamMember, AIActivityItem } from "@/context/AdminDataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +12,7 @@ import { Link } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
-const TABS = ["Branding", "Founder", "Services", "Projects", "Testimonials", "Pricing", "Contact", "SEO", "World Map", "HiveMind AI"];
+const TABS = ["Branding", "Founder", "Services", "Projects", "Testimonials", "Pricing", "Contact", "SEO", "World Map", "Trust Badges", "HiveMind AI"];
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -789,7 +789,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-muted-foreground mb-4">X/Y position: 0-100% on the world map. Use lat/lng coordinates or estimate visually (left-right, top-bottom).</p>
 
                   <div className="space-y-3">
-                    {(isAddingCountry ? [{ id: "new", name: "", flag: "🌍", active: false, projects: 0, x: 50, y: 50 } as WorldCountry, ...formData.worldCountries] : formData.worldCountries).map(country => {
+                    {(isAddingCountry ? [{ id: "new", name: "", flag: "🌍", active: false, projects: 0, x: 50, y: 50, lat: 0, lng: 0 } as WorldCountry, ...formData.worldCountries] : formData.worldCountries).map(country => {
                       const isEditing = editingCountryId === country.id || (isAddingCountry && country.id === "new");
                       if (isEditing) {
                         return (
@@ -819,6 +819,14 @@ export default function AdminDashboard() {
                                 <Label>Map Y Position (0-100)</Label>
                                 <Input type="number" min="0" max="100" defaultValue={country.y} id={`country-y-${country.id}`} />
                               </div>
+                              <div className="space-y-1">
+                                <Label>Latitude (-90 to 90)</Label>
+                                <Input type="number" min="-90" max="90" step="0.1" defaultValue={country.lat ?? 0} id={`country-lat-${country.id}`} />
+                              </div>
+                              <div className="space-y-1">
+                                <Label>Longitude (-180 to 180)</Label>
+                                <Input type="number" min="-180" max="180" step="0.1" defaultValue={country.lng ?? 0} id={`country-lng-${country.id}`} />
+                              </div>
                             </div>
                             <div className="flex justify-end gap-2">
                               <Button variant="outline" onClick={() => { setEditingCountryId(null); setIsAddingCountry(false); }}>Cancel</Button>
@@ -828,9 +836,11 @@ export default function AdminDashboard() {
                                 const projects = parseInt((document.getElementById(`country-projects-${country.id}`) as HTMLInputElement).value || "0", 10);
                                 const x = parseFloat((document.getElementById(`country-x-${country.id}`) as HTMLInputElement).value || "50");
                                 const y = parseFloat((document.getElementById(`country-y-${country.id}`) as HTMLInputElement).value || "50");
+                                const lat = parseFloat((document.getElementById(`country-lat-${country.id}`) as HTMLInputElement).value || "0");
+                                const lng = parseFloat((document.getElementById(`country-lng-${country.id}`) as HTMLInputElement).value || "0");
                                 const activeEl = document.getElementById(`country-active-${country.id}`);
                                 const active = activeEl ? activeEl.getAttribute('aria-checked') === 'true' : country.active;
-                                const newCountry: WorldCountry = { id: country.id === "new" ? Date.now().toString() : country.id, name, flag, projects, x, y, active };
+                                const newCountry: WorldCountry = { id: country.id === "new" ? Date.now().toString() : country.id, name, flag, projects, x, y, lat, lng, active };
                                 if (country.id === "new") {
                                   setFormData(prev => ({ ...prev, worldCountries: [newCountry, ...prev.worldCountries] }));
                                   setIsAddingCountry(false);
@@ -869,6 +879,70 @@ export default function AdminDashboard() {
                       );
                     })}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── TRUST BADGES TAB ── */}
+            {activeTab === "Trust Badges" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Trust Badges</h3>
+                  <Button size="sm" onClick={() => {
+                    const newBadge: TrustBadge = { id: Date.now().toString(), label: "New Badge", icon: "CheckCircle", enabled: true };
+                    setFormData(prev => ({ ...prev, trustBadges: [...(prev.trustBadges || []), newBadge] }));
+                  }}>
+                    <Plus className="w-4 h-4 mr-2" />Add Badge
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">These badges appear in the footer and trust bar. Toggle to show/hide each one.</p>
+                <div className="space-y-3">
+                  {(formData.trustBadges || []).map((badge, idx) => (
+                    <div key={badge.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label>Label</Label>
+                          <Input value={badge.label} onChange={e => {
+                            const updated = [...(formData.trustBadges || [])];
+                            updated[idx] = { ...badge, label: e.target.value };
+                            setFormData(prev => ({ ...prev, trustBadges: updated }));
+                          }} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Icon</Label>
+                          <Select value={badge.icon} onValueChange={val => {
+                            const updated = [...(formData.trustBadges || [])];
+                            updated[idx] = { ...badge, icon: val };
+                            setFormData(prev => ({ ...prev, trustBadges: updated }));
+                          }}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {["Shield","Building2","Lock","Brain","Globe2","Rocket","CheckCircle"].map(icon => (
+                                <SelectItem key={icon} value={icon}>{icon}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Switch checked={badge.enabled} onCheckedChange={val => {
+                            const updated = [...(formData.trustBadges || [])];
+                            updated[idx] = { ...badge, enabled: val };
+                            setFormData(prev => ({ ...prev, trustBadges: updated }));
+                          }} />
+                          <Label>{badge.enabled ? "Visible" : "Hidden"}</Label>
+                        </div>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => {
+                          if (window.confirm("Delete this badge?")) {
+                            setFormData(prev => ({ ...prev, trustBadges: (prev.trustBadges || []).filter(b => b.id !== badge.id) }));
+                          }
+                        }}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

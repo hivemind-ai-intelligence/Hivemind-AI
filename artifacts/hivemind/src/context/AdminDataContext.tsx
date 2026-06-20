@@ -46,6 +46,15 @@ export interface WorldCountry {
   projects: number;
   x: number; // 0-100 map position %
   y: number;
+  lat?: number;
+  lng?: number;
+}
+
+export interface TrustBadge {
+  id: string;
+  label: string;
+  icon: string;
+  enabled: boolean;
 }
 
 export interface AITrait {
@@ -172,6 +181,9 @@ export interface AdminData {
   hivemindAIMission: string;
   hivemindAIVision: string;
   hivemindAIGrowthStory: string;
+
+  // TRUST BADGES
+  trustBadges: TrustBadge[];
 }
 
 const defaultData: AdminData = {
@@ -255,14 +267,14 @@ const defaultData: AdminData = {
 
   // WORLD MAP
   worldCountries: [
-    { id: "1", name: "India", flag: "🇮🇳", active: true, projects: 45, x: 68, y: 52 },
-    { id: "2", name: "USA", flag: "🇺🇸", active: true, projects: 38, x: 18, y: 37 },
-    { id: "3", name: "UK", flag: "🇬🇧", active: true, projects: 22, x: 48, y: 28 },
-    { id: "4", name: "Canada", flag: "🇨🇦", active: false, projects: 12, x: 17, y: 24 },
-    { id: "5", name: "Australia", flag: "🇦🇺", active: true, projects: 18, x: 83, y: 70 },
-    { id: "6", name: "Germany", flag: "🇩🇪", active: false, projects: 8, x: 51, y: 27 },
-    { id: "7", name: "Singapore", flag: "🇸🇬", active: true, projects: 15, x: 78, y: 58 },
-    { id: "8", name: "UAE", flag: "🇦🇪", active: false, projects: 6, x: 62, y: 48 },
+    { id: "1", name: "India", flag: "🇮🇳", active: true, projects: 45, x: 68, y: 52, lat: 22, lng: 78 },
+    { id: "2", name: "USA", flag: "🇺🇸", active: true, projects: 38, x: 18, y: 37, lat: 38, lng: -97 },
+    { id: "3", name: "UK", flag: "🇬🇧", active: true, projects: 22, x: 48, y: 28, lat: 54, lng: -2 },
+    { id: "4", name: "Canada", flag: "🇨🇦", active: false, projects: 12, x: 17, y: 24, lat: 57, lng: -106 },
+    { id: "5", name: "Australia", flag: "🇦🇺", active: true, projects: 18, x: 83, y: 70, lat: -27, lng: 134 },
+    { id: "6", name: "Germany", flag: "🇩🇪", active: false, projects: 8, x: 51, y: 27, lat: 51, lng: 10 },
+    { id: "7", name: "Singapore", flag: "🇸🇬", active: true, projects: 15, x: 78, y: 58, lat: 1.3, lng: 103.8 },
+    { id: "8", name: "UAE", flag: "🇦🇪", active: false, projects: 6, x: 62, y: 48, lat: 24, lng: 54 },
   ],
   worldActiveRegions: 5,
   worldProjects: 200,
@@ -343,6 +355,16 @@ const defaultData: AdminData = {
   hivemindAIMission: "To democratize access to advanced AI capabilities, empowering creators, startups, and enterprises to build faster, smarter, and more efficiently than ever before.",
   hivemindAIVision: "A world where every business — regardless of size — has access to a dedicated AI co-founder that understands their goals, automates their operations, and accelerates their growth.",
   hivemindAIGrowthStory: "From a single AI assistant to a comprehensive Digital Co-Founder system, HiveMind AI has grown alongside the agency — processing millions of tasks, serving clients across continents, and continuously evolving through real-world deployments.",
+
+  // TRUST BADGES
+  trustBadges: [
+    { id: "1", label: "Verified AI Company", icon: "Shield", enabled: true },
+    { id: "2", label: "Enterprise Ready", icon: "Building2", enabled: true },
+    { id: "3", label: "Security Verified", icon: "Lock", enabled: true },
+    { id: "4", label: "AI Powered", icon: "Brain", enabled: true },
+    { id: "5", label: "Global Network Active", icon: "Globe2", enabled: true },
+    { id: "6", label: "Future Ready", icon: "Rocket", enabled: true },
+  ],
 };
 
 interface AdminContextType {
