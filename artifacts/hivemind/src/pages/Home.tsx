@@ -4,12 +4,14 @@ import LoadingScreen from "@/components/LoadingScreen";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Marquee from "@/components/Marquee";
+import WhyHiveMind from "@/components/WhyHiveMind";
 import Services from "@/components/Services";
 import Projects from "@/components/Projects";
 import Owner from "@/components/Owner";
 import WorldMap from "../components/WorldMap";
 import Testimonials from "@/components/Testimonials";
 import Pricing from "@/components/Pricing";
+import Roadmap from "@/components/Roadmap";
 import EnquiryForm from "@/components/EnquiryForm";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
@@ -66,6 +68,7 @@ export default function Home() {
           <Marquee />
           
           <div className="relative z-10 bg-background">
+            <WhyHiveMind />
             <Suspense fallback={<FallbackSpinner />}>
               <AIChat />
             </Suspense>
@@ -75,6 +78,7 @@ export default function Home() {
             <Owner />
             <Testimonials />
             <Pricing />
+            <Roadmap />
             <EnquiryForm />
             <Contact />
           </div>

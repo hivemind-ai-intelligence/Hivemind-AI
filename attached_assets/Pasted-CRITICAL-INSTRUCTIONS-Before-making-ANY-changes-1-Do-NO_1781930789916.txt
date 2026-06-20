@@ -1,0 +1,305 @@
+CRITICAL INSTRUCTIONS
+
+Before making ANY changes:
+
+1. Do NOT remove any existing functionality.
+2. Do NOT rename existing routes.
+3. Do NOT redesign the entire website.
+4. Do NOT break any existing animations.
+5. Do NOT remove any components.
+6. Do NOT modify working features unless required.
+7. Keep all current styling, responsiveness and branding.
+8. Keep all current content intact.
+9. Preserve production readiness.
+10. Ensure zero build errors.
+11. Ensure zero console errors.
+12. Ensure mobile responsiveness remains intact.
+
+Only ADD and UPGRADE.
+
+Create a completely premium and professional "Why HiveMind" section.
+
+This section is extremely important.
+
+Design inspiration:
+
+Apple
+Tesla
+OpenAI
+Vercel
+Stripe
+
+Requirements:
+
+Premium enterprise appearance.
+
+No generic cards.
+
+No cheap effects.
+
+No placeholder content.
+
+Main Headline:
+
+Most companies build websites.
+
+HiveMind builds intelligent businesses.
+
+Subheadline:
+
+HiveMind AI combines intelligent systems, automation, digital infrastructure and artificial intelligence to help businesses operate smarter and grow faster.
+
+Interactive Cards:
+
+1. AI Intelligence
+2. Business Automation
+3. Global Infrastructure
+4. Future Ready Systems
+
+Card Requirements:
+
+- Hover animations
+- Smooth motion
+- Premium glass effect
+- Border glow
+- Professional typography
+- Mobile responsive
+
+Functional Buttons:
+
+Button 1:
+Explore AI Systems
+
+Action:
+Scroll to services section.
+
+Button 2:
+View Roadmap
+
+Action:
+Scroll to roadmap section.
+
+Button 3:
+Launch HiveMind AI
+
+Action:
+Open AI assistant/chat section.
+
+Buttons must actually work.
+
+No fake buttons.
+
+Create a premium interactive roadmap section.
+
+Design Style:
+
+Space-inspired
+AI Network inspired
+Professional
+High-tech
+Enterprise-grade
+
+Not a simple timeline.
+
+Requirements:
+
+Animated roadmap line.
+
+Interactive nodes.
+
+Expandable milestones.
+
+Smooth transitions.
+
+Premium visual effects.
+
+Years:
+
+2026
+HiveMind Assistant
+
+- AI Chat
+- Knowledge Base
+- Voice AI
+
+2027
+Automation Platform
+
+- Workflow Automation
+- Business Systems
+- Integrations
+
+2028
+HiveMind OS Alpha
+
+- Business Operating System
+- Smart Dashboard
+- AI Intelligence Layer
+
+2029
+AI Workforce System
+
+- AI Receptionist
+- AI Support
+- AI Sales
+
+2030
+Global AI Infrastructure
+
+- Multi-region systems
+- Business Intelligence Network
+
+2031
+Autonomous Business Agents
+
+- Self-operating AI systems
+
+2032
+HiveMind Cloud
+
+- Unified AI ecosystem
+
+2033
+AI Commerce Network
+
+- Intelligent commerce infrastructure
+
+2034
+Global Intelligence Grid
+
+- Worldwide AI collaboration
+
+2035
+Human + AI Civilization Layer
+
+- Complete HiveMind Vision
+
+Requirements:
+
+- Click year to expand details
+- Smooth animation
+- Premium UI
+- Mobile responsive
+- No cheap accordion style
+- High-end enterprise design
+
+Create professional legal pages.
+
+Add routes:
+
+/terms
+/privacy
+/disclaimer
+/contact
+
+Create a detailed enterprise-grade Terms & Conditions page.
+
+Include:
+
+- Company Overview
+- Services
+- User Responsibilities
+- Acceptable Use
+- Intellectual Property
+- Payments
+- Refund Policy
+- Service Availability
+- Limitation of Liability
+- AI Disclaimer
+- Termination Rights
+- Contact Information
+
+Company Name:
+
+HiveMind AI
+
+Tagline:
+
+Humans. AI. One Mind.
+
+Create detailed Privacy Policy.
+
+Include:
+
+- Data Collection
+- Contact Form Data
+- Cookies
+- Analytics
+- Usage Data
+- Data Security
+- Data Retention
+- User Rights
+- Third Party Services
+
+Create a detailed Disclaimer page.
+
+Include:
+
+- General Information Disclaimer
+- AI Content Disclaimer
+- Accuracy Disclaimer
+- Professional Advice Disclaimer
+- Limitation of Liability
+
+Create premium contact page.
+
+Include:
+
+- Name
+- Email
+- Subject
+- Message
+
+Sections:
+
+- Business Inquiries
+- Partnerships
+- Technical Support
+- General Questions
+
+Add links:
+
+Terms & Conditions
+Privacy Policy
+Disclaimer
+Contact
+
+Footer Content:
+
+HiveMind AI™
+
+Humans. AI. One Mind.
+
+Security Verified • AI Powered • Enterprise Ready • Future Ready
+
+© 2026 HiveMind AI. All Rights Reserved.
+
+Built For The Next Generation Of Digital Intelligence.
+
+- Preserve all existing functionality
+- Preserve current globe section
+- Preserve current animations
+- Preserve current branding
+- Preserve responsiveness
+- No broken routes
+- No build errors
+- No console errors
+- Production ready
+
+Do not remove anything.
+
+Only professionally upgrade the website.
+
+After implementation verify:
+
+✓ Website loads
+✓ Globe works
+✓ Navigation works
+✓ Mobile responsive
+✓ Footer links work
+✓ Terms page works
+✓ Privacy page works
+✓ Disclaimer page works
+✓ Contact page works
+✓ Existing features still work
+✓ Build succeeds

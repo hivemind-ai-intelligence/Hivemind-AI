@@ -11,6 +11,10 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import AdminDashboard from "@/pages/AdminDashboard";
 import HivemindAI from "@/pages/HivemindAI";
+import Terms from "@/pages/Terms";
+import Privacy from "@/pages/Privacy";
+import Disclaimer from "@/pages/Disclaimer";
+import ContactPage from "@/pages/ContactPage";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +53,10 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/hivemind-ai" component={HivemindAI} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/disclaimer" component={Disclaimer} />
+      <Route path="/contact" component={ContactPage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -73,8 +73,9 @@ export default function Footer() {
               <li><a href="#about" className="text-white/35 hover:text-white/70 transition-colors text-sm">About Us</a></li>
               <li><a href="#projects" className="text-white/35 hover:text-white/70 transition-colors text-sm">Our Work</a></li>
               <li><a href="#global" className="text-white/35 hover:text-white/70 transition-colors text-sm">Global Presence</a></li>
+              <li><a href="#roadmap" className="text-white/35 hover:text-white/70 transition-colors text-sm">Roadmap</a></li>
               <li><a href="#pricing" className="text-white/35 hover:text-white/70 transition-colors text-sm">Pricing</a></li>
-              <li><a href="#contact" className="text-white/35 hover:text-white/70 transition-colors text-sm">Contact</a></li>
+              <li><Link href="/contact" className="text-white/35 hover:text-white/70 transition-colors text-sm">Contact</Link></li>
             </ul>
           </div>
 
@@ -95,8 +96,10 @@ export default function Footer() {
           </div>
 
           <div className="flex items-center gap-5 text-xs text-white/25">
-            <a href="#" className="hover:text-white/60 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white/60 transition-colors">Terms</a>
+            <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
+            <Link href="/disclaimer" className="hover:text-white/60 transition-colors">Disclaimer</Link>
+            <Link href="/contact" className="hover:text-white/60 transition-colors">Contact</Link>
             <Link href="/admin" className="hover:text-white/60 transition-colors">Admin</Link>
           </div>
         </div>
