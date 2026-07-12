@@ -1,10 +1,28 @@
 import { Router, type IRouter } from "express";
 import OpenAI from "openai";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-const openai = process.env["OPENAI_API_KEY"]
-  ? new OpenAI({ apiKey: process.env["OPENAI_API_KEY"] })
+// AI provider: OpenRouter (OpenAI-compatible API), configured via OPENROUTER_API_KEY.
+// Uses free-tier models so the assistant works without requiring paid credits.
+// Multiple models are tried in order since individual free models can be
+// transiently rate-limited upstream by their hosting provider.
+const AI_MODELS = [
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "openai/gpt-oss-20b:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+];
+
+const openai = process.env["OPENROUTER_API_KEY"]
+  ? new OpenAI({
+      apiKey: process.env["OPENROUTER_API_KEY"],
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultHeaders: {
+        "HTTP-Referer": "https://hivemind.ai",
+        "X-Title": "Hivemind AI",
+      },
+    })
   : null;
 
 interface ChatMessage {
@@ -92,22 +110,36 @@ router.post("/ai/chat", async (req, res) => {
     }
 
     const systemPrompt = buildSystemPrompt(systemContext);
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...recentMessages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
-      ],
-      max_tokens: 400,
-      temperature: 0.72,
-    });
+    const chatMessages = [
+      { role: "system" as const, content: systemPrompt },
+      ...recentMessages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+    ];
 
-    const content = completion.choices[0]?.message?.content || "Processing anomaly detected. Please try again.";
-    res.json({ content, model: "gpt-4o-mini" });
+    let lastErr: any;
+    for (const model of AI_MODELS) {
+      try {
+        const completion = await openai.chat.completions.create({
+          model,
+          messages: chatMessages,
+          max_tokens: 400,
+          temperature: 0.72,
+        });
 
-  } catch (err: any) {
-    const msg = err?.message || "";
-    const isQuota = msg.includes("quota") || msg.includes("billing") || msg.includes("429") || msg.includes("insufficient");
+        const content = completion.choices[0]?.message?.content || "Processing anomaly detected. Please try again.";
+        res.json({ content, model });
+        return;
+      } catch (err: any) {
+        lastErr = err;
+        const msg = err?.message || "";
+        const isRateLimited = msg.includes("429") || msg.includes("rate");
+        logger.error({ err, model }, "AI chat completion failed for model, trying next");
+        if (!isRateLimited) break; // non-rate-limit errors (auth, etc.) won't be fixed by switching models
+      }
+    }
+
+    // All models failed — fall back to the built-in rule-based responder.
+    const msg = lastErr?.message || "";
+    const isQuota = msg.includes("quota") || msg.includes("billing") || msg.includes("429") || msg.includes("insufficient") || msg.includes("rate");
     const isKey   = msg.includes("401") || msg.includes("Unauthorized") || msg.includes("auth");
 
     if (isQuota || isKey) {
@@ -117,6 +149,9 @@ router.post("/ai/chat", async (req, res) => {
     } else {
       res.status(500).json({ error: "Intelligence core error", details: msg });
     }
+  } catch (err: any) {
+    logger.error({ err }, "AI chat route error");
+    res.status(500).json({ error: "Intelligence core error", details: err?.message || "" });
   }
 });
 
@@ -359,7 +394,7 @@ function portfolioResponse(brand: string, founder: string, ctx: SystemContext, l
 
 function capabilitiesResponse(brand: string, lang: string): string {
   const map: Record<string, string> = {
-    en: `I'm the ${brand} intelligence — here's what I can help with right now:\n\n- **Answer questions** about ${brand}, services, pricing, and process\n- **Recommend** the right service for your project\n- **Guide you** to the right pricing tier\n- **Connect you** with the team for next steps\n\nI'm running on ${brand}'s built-in intelligence engine. For real-time GPT-4o: add billing at platform.openai.com. What can I help you with?`,
+    en: `I'm the ${brand} intelligence — here's what I can help with right now:\n\n- **Answer questions** about ${brand}, services, pricing, and process\n- **Recommend** the right service for your project\n- **Guide you** to the right pricing tier\n- **Connect you** with the team for next steps\n\nI'm running on ${brand}'s built-in intelligence engine right now. What can I help you with?`,
     hi: `मैं ${brand} का intelligence हूं। मैं इनमें help कर सकता हूं:\n- Services और pricing की जानकारी\n- आपके project के लिए सही service recommend करना\n- Team से connect करना\n\nक्या जानना है?`,
     hinglish: `Main ${brand} ka AI hoon. Kya kar sakta hoon:\n- Services aur pricing explain karna\n- Aapke project ke liye sahi service suggest karna\n- Team se connect karwana\n\nBatao kya chahiye?`,
   };

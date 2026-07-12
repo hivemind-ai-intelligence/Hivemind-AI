@@ -310,7 +310,7 @@ export default function AIChat() {
   }[aiStatus];
 
   const statusLabel = {
-    online: "Online · GPT-4o",
+    online: "Online · AI",
     fallback: "Smart Fallback",
     error: "Offline Mode",
   }[aiStatus];
@@ -351,7 +351,7 @@ export default function AIChat() {
             transition={{ delay: 0.2 }}
             className="text-white/40 max-w-lg mx-auto leading-relaxed"
           >
-            Real GPT-4o powered AI. Converses naturally in 24+ languages. Remembers your session context.
+            Real AI-powered conversation. Converses naturally in 24+ languages. Remembers your session context.
           </motion.p>
         </div>
 
