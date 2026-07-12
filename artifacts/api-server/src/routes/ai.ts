@@ -3,8 +3,19 @@ import OpenAI from "openai";
 
 const router: IRouter = Router();
 
-const openai = process.env["OPENAI_API_KEY"]
-  ? new OpenAI({ apiKey: process.env["OPENAI_API_KEY"] })
+// AI provider: OpenRouter (OpenAI-compatible API), configured via OPENROUTER_API_KEY.
+// Uses a free-tier model so the assistant works without requiring paid credits.
+const AI_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+
+const openai = process.env["OPENROUTER_API_KEY"]
+  ? new OpenAI({
+      apiKey: process.env["OPENROUTER_API_KEY"],
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultHeaders: {
+        "HTTP-Referer": "https://hivemind.ai",
+        "X-Title": "Hivemind AI",
+      },
+    })
   : null;
 
 interface ChatMessage {
@@ -93,7 +104,7 @@ router.post("/ai/chat", async (req, res) => {
 
     const systemPrompt = buildSystemPrompt(systemContext);
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: AI_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         ...recentMessages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
@@ -103,7 +114,7 @@ router.post("/ai/chat", async (req, res) => {
     });
 
     const content = completion.choices[0]?.message?.content || "Processing anomaly detected. Please try again.";
-    res.json({ content, model: "gpt-4o-mini" });
+    res.json({ content, model: AI_MODEL });
 
   } catch (err: any) {
     const msg = err?.message || "";
@@ -359,7 +370,7 @@ function portfolioResponse(brand: string, founder: string, ctx: SystemContext, l
 
 function capabilitiesResponse(brand: string, lang: string): string {
   const map: Record<string, string> = {
-    en: `I'm the ${brand} intelligence — here's what I can help with right now:\n\n- **Answer questions** about ${brand}, services, pricing, and process\n- **Recommend** the right service for your project\n- **Guide you** to the right pricing tier\n- **Connect you** with the team for next steps\n\nI'm running on ${brand}'s built-in intelligence engine. For real-time GPT-4o: add billing at platform.openai.com. What can I help you with?`,
+    en: `I'm the ${brand} intelligence — here's what I can help with right now:\n\n- **Answer questions** about ${brand}, services, pricing, and process\n- **Recommend** the right service for your project\n- **Guide you** to the right pricing tier\n- **Connect you** with the team for next steps\n\nI'm running on ${brand}'s built-in intelligence engine right now. What can I help you with?`,
     hi: `मैं ${brand} का intelligence हूं। मैं इनमें help कर सकता हूं:\n- Services और pricing की जानकारी\n- आपके project के लिए सही service recommend करना\n- Team से connect करना\n\nक्या जानना है?`,
     hinglish: `Main ${brand} ka AI hoon. Kya kar sakta hoon:\n- Services aur pricing explain karna\n- Aapke project ke liye sahi service suggest karna\n- Team se connect karwana\n\nBatao kya chahiye?`,
   };
