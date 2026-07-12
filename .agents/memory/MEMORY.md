@@ -4,3 +4,4 @@
 - [Hivemind trust badges](hivemind-trust-badges.md) — TrustBadge in AdminData; shown in TrustBadgesBar (above footer) and Footer; editable in Admin Dashboard "Trust Badges" tab
 - [Hivemind wouter Link rule](hivemind-wouter-link.md) — wouter Link renders its own <a>; never nest <a> inside <Link>; use className directly on Link
 - [Hivemind page sections](hivemind-sections.md) — Home.tsx section order and all registered routes including legal pages
+- [Hivemind AI chat provider](hivemind-ai-provider.md) — uses OpenRouter (not OpenAI) via OPENROUTER_API_KEY, tries multiple free models in sequence since free-tier 429s are routine

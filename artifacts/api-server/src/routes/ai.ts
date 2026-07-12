@@ -1,11 +1,18 @@
 import { Router, type IRouter } from "express";
 import OpenAI from "openai";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
 // AI provider: OpenRouter (OpenAI-compatible API), configured via OPENROUTER_API_KEY.
-// Uses a free-tier model so the assistant works without requiring paid credits.
-const AI_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+// Uses free-tier models so the assistant works without requiring paid credits.
+// Multiple models are tried in order since individual free models can be
+// transiently rate-limited upstream by their hosting provider.
+const AI_MODELS = [
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "openai/gpt-oss-20b:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+];
 
 const openai = process.env["OPENROUTER_API_KEY"]
   ? new OpenAI({
@@ -103,22 +110,36 @@ router.post("/ai/chat", async (req, res) => {
     }
 
     const systemPrompt = buildSystemPrompt(systemContext);
-    const completion = await openai.chat.completions.create({
-      model: AI_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...recentMessages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
-      ],
-      max_tokens: 400,
-      temperature: 0.72,
-    });
+    const chatMessages = [
+      { role: "system" as const, content: systemPrompt },
+      ...recentMessages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+    ];
 
-    const content = completion.choices[0]?.message?.content || "Processing anomaly detected. Please try again.";
-    res.json({ content, model: AI_MODEL });
+    let lastErr: any;
+    for (const model of AI_MODELS) {
+      try {
+        const completion = await openai.chat.completions.create({
+          model,
+          messages: chatMessages,
+          max_tokens: 400,
+          temperature: 0.72,
+        });
 
-  } catch (err: any) {
-    const msg = err?.message || "";
-    const isQuota = msg.includes("quota") || msg.includes("billing") || msg.includes("429") || msg.includes("insufficient");
+        const content = completion.choices[0]?.message?.content || "Processing anomaly detected. Please try again.";
+        res.json({ content, model });
+        return;
+      } catch (err: any) {
+        lastErr = err;
+        const msg = err?.message || "";
+        const isRateLimited = msg.includes("429") || msg.includes("rate");
+        logger.error({ err, model }, "AI chat completion failed for model, trying next");
+        if (!isRateLimited) break; // non-rate-limit errors (auth, etc.) won't be fixed by switching models
+      }
+    }
+
+    // All models failed — fall back to the built-in rule-based responder.
+    const msg = lastErr?.message || "";
+    const isQuota = msg.includes("quota") || msg.includes("billing") || msg.includes("429") || msg.includes("insufficient") || msg.includes("rate");
     const isKey   = msg.includes("401") || msg.includes("Unauthorized") || msg.includes("auth");
 
     if (isQuota || isKey) {
@@ -128,6 +149,9 @@ router.post("/ai/chat", async (req, res) => {
     } else {
       res.status(500).json({ error: "Intelligence core error", details: msg });
     }
+  } catch (err: any) {
+    logger.error({ err }, "AI chat route error");
+    res.status(500).json({ error: "Intelligence core error", details: err?.message || "" });
   }
 });
 
