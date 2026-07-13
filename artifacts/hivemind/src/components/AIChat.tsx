@@ -189,7 +189,9 @@ export default function AIChat() {
   });
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [aiStatus, setAiStatus] = useState<"online" | "fallback" | "error">("online");
+  // "error"/offline is intentionally not a reachable UI state — the assistant
+  // always answers via live models or, failing that, the built-in responder.
+  const [aiStatus, setAiStatus] = useState<"online" | "fallback">("online");
   const [charCount, setCharCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -266,7 +268,14 @@ export default function AIChat() {
     }
 
     try {
-      const result = await callAI(updatedHistory);
+      let result: { content: string; mode?: string };
+      try {
+        result = await callAI(updatedHistory);
+      } catch (firstErr) {
+        // One quick retry — most failures here are transient (a slow/rate
+        // limited free model or a brief network blip), not a real outage.
+        result = await callAI(updatedHistory);
+      }
       setAiStatus(result.mode === "fallback" ? "fallback" : "online");
 
       const aiMsg: Message = {
@@ -279,8 +288,12 @@ export default function AIChat() {
         [activeMode]: [...updatedHistory, aiMsg],
       }));
     } catch (err) {
-      setAiStatus("error");
-      // Local fallback response
+      // Even if both the network call and its retry fail, the assistant
+      // still answers — using the local, zero-dependency responder — so the
+      // user is never left without a reply. We surface this as "Smart
+      // Fallback" rather than a hard offline state, since the AI is still
+      // responding.
+      setAiStatus("fallback");
       const fallback = localFallback(text, data.brandName);
       setConversations(prev => ({
         ...prev,
@@ -306,13 +319,11 @@ export default function AIChat() {
   const statusColor = {
     online: "bg-emerald-400",
     fallback: "bg-amber-400",
-    error: "bg-red-400",
   }[aiStatus];
 
   const statusLabel = {
     online: "Online · AI",
     fallback: "Smart Fallback",
-    error: "Offline Mode",
   }[aiStatus];
 
   return (

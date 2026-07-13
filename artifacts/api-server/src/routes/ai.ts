@@ -12,6 +12,11 @@ const AI_MODELS = [
   "meta-llama/llama-3.3-70b-instruct:free",
   "openai/gpt-oss-20b:free",
   "qwen/qwen3-next-80b-a3b-instruct:free",
+  "mistralai/mistral-small-3.2-24b-instruct:free",
+  "meta-llama/llama-3.1-8b-instruct:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "qwen/qwen-2.5-72b-instruct:free",
+  "mistralai/mistral-7b-instruct:free",
 ];
 
 const openai = process.env["OPENROUTER_API_KEY"]
@@ -127,7 +132,7 @@ router.post("/ai/chat", async (req, res) => {
             max_tokens: 400,
             temperature: 0.72,
           },
-          { timeout: 9000 },
+          { timeout: 7000 },
         );
 
         const content = completion.choices[0]?.message?.content || "Processing anomaly detected. Please try again.";
@@ -135,10 +140,10 @@ router.post("/ai/chat", async (req, res) => {
         return;
       } catch (err: any) {
         lastErr = err;
-        const msg = err?.message || "";
-        const isRateLimited = msg.includes("429") || msg.includes("rate");
         logger.error({ err, model }, "AI chat completion failed for model, trying next");
-        if (!isRateLimited) break; // non-rate-limit errors (auth, etc.) won't be fixed by switching models
+        // Always keep trying the next free model regardless of error type
+        // (rate limit, timeout, transient provider outage, etc.) — only an
+        // exhausted model list falls through to the built-in fallback below.
       }
     }
 
@@ -150,8 +155,20 @@ router.post("/ai/chat", async (req, res) => {
     const reply = advancedFallback(msgs || [], ctx || {});
     res.json({ content: reply, mode: "fallback", notice: "Running on built-in intelligence" });
   } catch (err: any) {
-    logger.error({ err }, "AI chat route error");
-    res.status(500).json({ error: "Intelligence core error", details: err?.message || "" });
+    // Even on an unexpected server-side error, never leave the user with no
+    // answer — degrade to the built-in rule-based responder and still return
+    // 200 so the client never has to show a hard "offline" state.
+    logger.error({ err }, "AI chat route error, using built-in fallback");
+    try {
+      const { messages: msgs, systemContext: ctx } = req.body as any;
+      const reply = advancedFallback(Array.isArray(msgs) ? msgs : [], ctx || {});
+      res.json({ content: reply, mode: "fallback", notice: "Running on built-in intelligence" });
+    } catch {
+      res.json({
+        content: "I'm here and ready to help — ask me about services, pricing, or how to start a project.",
+        mode: "fallback",
+      });
+    }
   }
 });
 
