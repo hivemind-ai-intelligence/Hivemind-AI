@@ -1,5 +1,6 @@
 {
-  "buildCommand": "pnpm --filter @workspace/hivemind build && cp -r artifacts/hivemind/dist dist",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @workspace/hivemind build && rm -rf dist && cp -r artifacts/hivemind/dist dist",
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" },
