@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm --filter @workspace/hivemind build",
-  "outputDirectory": "artifacts/hivemind/dist",
+  "buildCommand": "pnpm --filter @workspace/hivemind build && cp -r artifacts/hivemind/dist dist",
+  "outputDirectory": "dist",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" },
     { "source": "/:path*", "destination": "/index.html" }
