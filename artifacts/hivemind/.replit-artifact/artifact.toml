@@ -19,7 +19,7 @@ run = "pnpm --filter @workspace/hivemind run dev"
 
 [services.production]
 build = [ "pnpm", "--filter", "@workspace/hivemind", "run", "build" ]
-publicDir = "artifacts/hivemind/dist/public"
+publicDir = "artifacts/hivemind/dist"
 serve = "static"
 
 [[services.production.rewrites]]

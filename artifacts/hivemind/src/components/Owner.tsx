@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mail, MessageSquare, Twitter, Linkedin, Briefcase, Award, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { useAdminData } from "@/hooks/useAdminData";
 import { useMagneticEffect } from "@/hooks/useMagneticEffect";
+import SideRays from "@/components/SideRays";
 
 export default function Owner() {
   const { data } = useAdminData();
@@ -72,6 +73,22 @@ whileHover={{
             
             {/* Animated Border */}
             <div className="absolute inset-0 rounded-3xl pointer-events-none p-[3px] bg-gradient-to-r from-foreground/10 via-foreground/30 to-foreground/10 animate-[bg-spin_8s_linear_infinite] [mask-image:linear-gradient(black,black)] [mask-composite:exclude]" />
+
+            {/* SideRays background effect */}
+            <div className="absolute inset-0 rounded-3xl pointer-events-none overflow-hidden z-[1]">
+              <SideRays
+                speed={1.4}
+                rayColor1="#6366f1"
+                rayColor2="#a855f7"
+                intensity={1.3}
+                spread={1.6}
+                origin="top-right"
+                saturation={1.2}
+                blend={0.6}
+                falloff={1.8}
+                opacity={0.5}
+              />
+            </div>
 
             <div className="grid md:grid-cols-[1fr_2fr] gap-12 items-start relative z-10" style={{ transform: "translateZ(20px)" }}>
               
