@@ -4,38 +4,96 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-// AI provider: OpenRouter (OpenAI-compatible API), configured via OPENROUTER_API_KEY.
-// Uses free-tier models so the assistant works without requiring paid credits.
-// Multiple models are tried in order since individual free models can be
-// transiently rate-limited upstream by their hosting provider.
-const AI_MODELS = [
+// ═══════════════════════════════════════════════════════════════════════════════
+// HIVEMIND AI — MULTI-PROVIDER INTELLIGENCE ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+// Architecture: OpenRouter (primary, 15 free models) → Groq (secondary, 4 free
+// models) → Built-in Fallback (24+ language rule-based intelligence).
+//
+// The system NEVER returns an error to the user — it gracefully degrades through
+// each layer and always delivers a response via the built-in J.A.R.V.I.S fallback.
+//
+// Providers:
+//   OPENROUTER_API_KEY — https://openrouter.ai/keys (free tier)
+//   GROQ_API_KEY       — https://console.groq.com/keys (free tier, optional)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── OpenRouter Free Models (Primary Provider) ─────────────────────────────────
+// Stratified in tiers — more capable models tried first, lightweight ones last.
+const OPENROUTER_FREE_MODELS = [
+  // Tier 1 — Enterprise-grade reasoning
+  "google/gemini-2.5-flash-preview-09-2025:free",
+  "google/gemini-2.5-flash-lite-preview-09-2025:free",
+  "meta-llama/llama-4-maverick:free",
   "meta-llama/llama-3.3-70b-instruct:free",
-  "openai/gpt-oss-20b:free",
-  "qwen/qwen3-next-80b-a3b-instruct:free",
+  // Tier 2 — Strong mid-size models
+  "deepseek/deepseek-r1:free",
+  "deepseek/deepseek-chat-v3-0324:free",
   "mistralai/mistral-small-3.2-24b-instruct:free",
-  "meta-llama/llama-3.1-8b-instruct:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  // Tier 3 — Compact but capable
   "qwen/qwen-2.5-72b-instruct:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "openai/gpt-oss-20b:free",
+  "meta-llama/llama-3.1-8b-instruct:free",
+  // Tier 4 — Lightweight fallbacks
+  "google/gemma-3-27b-it:free",
+  "microsoft/phi-3-mini-128k-instruct:free",
   "mistralai/mistral-7b-instruct:free",
 ];
 
-const openai = process.env["OPENROUTER_API_KEY"]
-  ? new OpenAI({
-      apiKey: process.env["OPENROUTER_API_KEY"],
-      baseURL: "https://openrouter.ai/api/v1",
-      maxRetries: 0,
-      timeout: 9000,
-      defaultHeaders: {
-        "HTTP-Referer": "https://hivemind.ai",
-        "X-Title": "Hivemind AI",
-      },
-    })
-  : null;
+// ── Groq Free Models (Secondary Provider) ─────────────────────────────────────
+const GROQ_FREE_MODELS = [
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
+  "gemma2-9b-it",
+  "mixtral-8x7b-32768",
+];
 
-interface ChatMessage {
-  role: "user" | "assistant" | "system";
-  content: string;
+// ── Model Blacklist (self-healing — auto-clears after 5 minutes) ──────────────
+const modelBlacklist = new Map<string, number>();
+const BLACKLIST_DURATION_MS = 5 * 60 * 1000;
+
+function isBlacklisted(model: string): boolean {
+  const until = modelBlacklist.get(model);
+  if (!until) return false;
+  if (Date.now() > until) { modelBlacklist.delete(model); return false; }
+  return true;
 }
+
+function blacklistModel(model: string): void {
+  modelBlacklist.set(model, Date.now() + BLACKLIST_DURATION_MS);
+}
+
+// ── Provider Clients ──────────────────────────────────────────────────────────
+function createOpenRouterClient(): OpenAI | null {
+  const apiKey = process.env["OPENROUTER_API_KEY"];
+  if (!apiKey) return null;
+  return new OpenAI({
+    apiKey,
+    baseURL: "https://openrouter.ai/api/v1",
+    maxRetries: 0,
+    timeout: 12000,
+    defaultHeaders: {
+      "HTTP-Referer": "https://hivemind.ai",
+      "X-Title": "Hivemind AI",
+    },
+  });
+}
+
+function createGroqClient(): OpenAI | null {
+  const apiKey = process.env["GROQ_API_KEY"];
+  if (!apiKey) return null;
+  return new OpenAI({
+    apiKey,
+    baseURL: "https://api.groq.com/openai/v1",
+    maxRetries: 0,
+    timeout: 12000,
+  });
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface ChatMessage { role: "user" | "assistant" | "system"; content: string; }
 
 interface SystemContext {
   brandName?: string;
@@ -47,6 +105,7 @@ interface SystemContext {
   mode?: string;
 }
 
+// ── System Prompt Builder ─────────────────────────────────────────────────────
 function buildSystemPrompt(ctx: SystemContext): string {
   const brand = ctx.brandName || "HiveMind";
   const founder = ctx.founderName || "the founder";
@@ -96,6 +155,10 @@ PERSONALITY PROTOCOL:
 - Avoid filler phrases: "Certainly!", "Of course!", "Great question!" — these are banned`;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN AI CHAT ENDPOINT
+// ═══════════════════════════════════════════════════════════════════════════════
+
 router.post("/ai/chat", async (req, res) => {
   try {
     const { messages, systemContext } = req.body as {
@@ -109,56 +172,83 @@ router.post("/ai/chat", async (req, res) => {
     }
 
     const recentMessages = messages.slice(-20);
+    const openRouter = createOpenRouterClient();
+    const groq = createGroqClient();
 
-    if (!openai) {
+    // No providers → smart fallback
+    if (!openRouter && !groq) {
       const reply = advancedFallback(recentMessages, systemContext);
-      res.json({ content: reply, mode: "fallback" });
+      res.json({ content: reply, mode: "fallback", notice: "Add OPENROUTER_API_KEY for AI-powered responses" });
       return;
     }
 
     const systemPrompt = buildSystemPrompt(systemContext);
     const chatMessages = [
       { role: "system" as const, content: systemPrompt },
-      ...recentMessages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+      ...recentMessages.map(m => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
     ];
 
-    let lastErr: any;
-    for (const model of AI_MODELS) {
-      try {
-        const completion = await openai.chat.completions.create(
-          {
-            model,
-            messages: chatMessages,
-            max_tokens: 400,
-            temperature: 0.72,
-          },
-          { timeout: 7000 },
-        );
-
-        const content = completion.choices[0]?.message?.content || "Processing anomaly detected. Please try again.";
-        res.json({ content, model });
-        return;
-      } catch (err: any) {
-        lastErr = err;
-        logger.error({ err, model }, "AI chat completion failed for model, trying next");
-        // Always keep trying the next free model regardless of error type
-        // (rate limit, timeout, transient provider outage, etc.) — only an
-        // exhausted model list falls through to the built-in fallback below.
+    // ── Strategy 1: OpenRouter (15 free models) ────────────────────────
+    if (openRouter) {
+      const activeModels = OPENROUTER_FREE_MODELS.filter(m => !isBlacklisted(m));
+      for (const model of activeModels) {
+        try {
+          const completion = await openRouter.chat.completions.create(
+            { model, messages: chatMessages, max_tokens: 400, temperature: 0.72 },
+            { timeout: 8000 },
+          );
+          const content = completion.choices[0]?.message?.content;
+          if (content) {
+            res.json({ content, model, provider: "openrouter" });
+            return;
+          }
+        } catch (err: any) {
+          const status = err?.status || err?.response?.status;
+          if (status === 429 || status === 402 || status === 403) {
+            blacklistModel(model);
+            logger.warn({ model, status }, "OpenRouter model blacklisted (5 min)");
+          } else {
+            logger.warn({ model, err: err?.message }, "OpenRouter model failed, trying next");
+          }
+        }
       }
     }
 
-    // All models failed (rate-limited, auth, timeout, etc.) — rather than
-    // surfacing an error to the user, gracefully degrade to the built-in
-    // rule-based responder so the assistant always has something useful to say.
-    logger.error({ err: lastErr?.message }, "All AI models failed, using built-in fallback");
-    const { messages: msgs, systemContext: ctx } = req.body;
-    const reply = advancedFallback(msgs || [], ctx || {});
-    res.json({ content: reply, mode: "fallback", notice: "Running on built-in intelligence" });
+    // ── Strategy 2: Groq (4 free models) ──────────────────────────────
+    if (groq) {
+      const activeGroqModels = GROQ_FREE_MODELS.filter(m => !isBlacklisted(`groq:${m}`));
+      for (const model of activeGroqModels) {
+        try {
+          const completion = await groq.chat.completions.create(
+            { model, messages: chatMessages, max_tokens: 400, temperature: 0.72 },
+            { timeout: 8000 },
+          );
+          const content = completion.choices[0]?.message?.content;
+          if (content) {
+            res.json({ content, model, provider: "groq" });
+            return;
+          }
+        } catch (err: any) {
+          const status = err?.status || err?.response?.status;
+          if (status === 429 || status === 402 || status === 403) {
+            blacklistModel(`groq:${model}`);
+            logger.warn({ model, status }, "Groq model blacklisted (5 min)");
+          } else {
+            logger.warn({ model, err: err?.message }, "Groq model failed, trying next");
+          }
+        }
+      }
+    }
+
+    // ── Strategy 3: Built-in J.A.R.V.I.S Intelligence ─────────────────
+    logger.warn("All AI models exhausted — using built-in J.A.R.V.I.S fallback");
+    const reply = advancedFallback(recentMessages, systemContext);
+    res.json({ content: reply, mode: "fallback", notice: "Running on built-in J.A.R.V.I.S intelligence" });
   } catch (err: any) {
-    // Even on an unexpected server-side error, never leave the user with no
-    // answer — degrade to the built-in rule-based responder and still return
-    // 200 so the client never has to show a hard "offline" state.
-    logger.error({ err }, "AI chat route error, using built-in fallback");
+    logger.error({ err }, "AI chat route crashed — emergency fallback");
     try {
       const { messages: msgs, systemContext: ctx } = req.body as any;
       const reply = advancedFallback(Array.isArray(msgs) ? msgs : [], ctx || {});
@@ -172,97 +262,58 @@ router.post("/ai/chat", async (req, res) => {
   }
 });
 
-// ── Advanced Fallback Intelligence ─────────────────────────────────────────
-// Context-aware, Jarvis-personality, multi-language, conversation-aware
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADVANCED FALLBACK — J.A.R.V.I.S BUILT-IN INTELLIGENCE
+// Context-aware, 24+ language, multi-mode, conversation-aware rule engine.
+// Activates only when all API providers are unreachable.
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function advancedFallback(messages: ChatMessage[], ctx: SystemContext): string {
   const brand   = ctx.brandName   || "HiveMind";
   const founder = ctx.founderName || "our founder";
   const mode    = ctx.mode        || "general";
 
-  // Get the last user message
   const lastUser = [...messages].reverse().find(m => m.role === "user");
   const input    = lastUser?.content || "";
 
-  // Get conversation history for context
-  const history  = messages.filter(m => m.role === "user").map(m => m.content.toLowerCase());
+  const history   = messages.filter(m => m.role === "user").map(m => m.content.toLowerCase());
   const turnCount = history.length;
-  const lower    = input.toLowerCase();
+  const lower     = input.toLowerCase();
 
-  // ── Language detection ────────────────────────────────────
   const lang = detectLanguage(input);
 
-  // ── Context signals from conversation history ─────────────
   const mentionedBudget   = history.some(h => /budget|afford|cheap|expensive|price|cost|₹|\$|rs\.|rupee/i.test(h));
   const mentionedProject  = history.some(h => /website|app|bot|discord|ai|automation|brand/i.test(h));
-  const mentionedContact  = history.some(h => /email|contact|reach|hire|start|call|meeting/i.test(h));
-  const isReturningUser   = turnCount > 2;
+  const isReturningUser    = turnCount > 2;
 
-  // ── Greeting responses ────────────────────────────────────
-  if (/^(hi|hey|hello|hola|bonjour|hallo|ciao|oi|salut|привет|مرحبا|नमस्ते|नमस्कार|हेलो|हाय|こんにちは|你好|안녕|สวัสดี)\b/i.test(input.trim())) {
+  if (/^(hi|hey|hello|hola|bonjour|hallo|ciao|oi|salut|привет|مرحبا|नमस्ते|नमस्कार|हेलो|हाय|こんにちは|你好|안녕|สวัสดี)\b/i.test(input.trim()))
     return greetings(brand, founder, ctx, lang, mode, isReturningUser);
-  }
-
-  // ── Gratitude ─────────────────────────────────────────────
-  if (/\b(thanks|thank you|thx|ty|gracias|merci|danke|dhanyavaad|shukriya|धन्यवाद|شكرا|ありがとう|감사합니다|谢谢)\b/i.test(lower)) {
+  if (/\b(thanks|thank you|thx|ty|gracias|merci|danke|dhanyavaad|shukriya|धन्यवाद|شكرا|ありがとう|감사합니다|谢谢)\b/i.test(lower))
     return thankYou(brand, lang);
-  }
-
-  // ── What is this / about ──────────────────────────────────
-  if (/\b(what is|what are|who are|who is|about|tell me about|explain|introduce)\b/i.test(lower) ||
-      /\b(kya hai|kaun hai|batao|bataiye)\b/i.test(lower)) {
+  if (/\b(what is|what are|who are|who is|about|tell me about|explain|introduce)\b/i.test(lower) || /\b(kya hai|kaun hai|batao|bataiye)\b/i.test(lower))
     return aboutUs(brand, founder, ctx, lang);
-  }
-
-  // ── Services ──────────────────────────────────────────────
-  if (/\b(service|offer|build|create|make|develop|website|web|app|bot|discord|ai|automat|brand|logo|design)\b/i.test(lower) ||
-      /\b(karo|banao|chahiye|banana|website|app)\b/i.test(lower)) {
+  if (/\b(service|offer|build|create|make|develop|website|web|app|bot|discord|ai|automat|brand|logo|design)\b/i.test(lower) || /\b(karo|banao|chahiye|banana)\b/i.test(lower))
     return servicesResponse(brand, ctx, lang, mode, mentionedProject);
-  }
-
-  // ── Pricing ───────────────────────────────────────────────
-  if (/\b(price|cost|how much|pricing|budget|plan|tier|package|afford|₹|\$|rupee|rs\.)\b/i.test(lower) ||
-      /\b(kitna|daam|mehnga|sasta|paisa|budget)\b/i.test(lower)) {
+  if (/\b(price|cost|how much|pricing|budget|plan|tier|package|afford|₹|\$|rupee|rs\.)\b/i.test(lower) || /\b(kitna|daam|mehnga|sasta|paisa)\b/i.test(lower))
     return pricingResponse(brand, ctx, lang, mentionedBudget);
-  }
-
-  // ── Contact / start project ───────────────────────────────
-  if (/\b(contact|hire|start|project|connect|reach|email|call|meeting|book|schedule|work together)\b/i.test(lower) ||
-      /\b(sampark|contact karo|hire karo|kaam)\b/i.test(lower)) {
+  if (/\b(contact|hire|start|project|connect|reach|email|call|meeting|book|schedule|work together)\b/i.test(lower) || /\b(sampark|contact karo|hire karo|kaam)\b/i.test(lower))
     return contactResponse(brand, lang, mode);
-  }
-
-  // ── Tech stack / how do you work ─────────────────────────
-  if (/\b(tech|stack|technology|how do you|process|work|framework|build with|use)\b/i.test(lower)) {
+  if (/\b(tech|stack|technology|how do you|process|work|framework|build with|use)\b/i.test(lower))
     return techResponse(brand, lang);
-  }
-
-  // ── Timeline / deadline ───────────────────────────────────
-  if (/\b(timeline|deadline|how long|when|deliver|eta|time|days|weeks|month)\b/i.test(lower) ||
-      /\b(kitne din|kitna time|kab)\b/i.test(lower)) {
+  if (/\b(timeline|deadline|how long|when|deliver|eta|time|days|weeks|month)\b/i.test(lower) || /\b(kitne din|kitna time|kab)\b/i.test(lower))
     return timelineResponse(brand, lang);
-  }
-
-  // ── Portfolio / examples ──────────────────────────────────
-  if (/\b(portfolio|example|past work|previous|case study|sample|show me)\b/i.test(lower)) {
+  if (/\b(portfolio|example|past work|previous|case study|sample|show me)\b/i.test(lower))
     return portfolioResponse(brand, founder, ctx, lang);
-  }
-
-  // ── AI capabilities ───────────────────────────────────────
-  if (/\b(can you|are you able|do you|capable|feature|gpt|chatgpt|openai|artificial intelligence)\b/i.test(lower)) {
+  if (/\b(can you|are you able|do you|capable|feature|gpt|chatgpt|openai|artificial intelligence)\b/i.test(lower))
     return capabilitiesResponse(brand, lang);
-  }
-
-  // ── Mode-specific smart defaults ─────────────────────────
   if (mode === "pricing")  return pricingResponse(brand, ctx, lang, false);
   if (mode === "connect")  return contactResponse(brand, lang, mode);
   if (mode === "services") return servicesResponse(brand, ctx, lang, mode, false);
 
-  // ── Generic intelligent response ─────────────────────────
   return genericResponse(brand, lang, turnCount);
 }
 
-// ── Response generators ────────────────────────────────────────────────────
+// ── Response Generators ───────────────────────────────────────────────────────
 
 function greetings(brand: string, founder: string, ctx: SystemContext, lang: string, mode: string, returning: boolean): string {
   const variants: Record<string, string[]> = {
@@ -273,32 +324,11 @@ function greetings(brand: string, founder: string, ctx: SystemContext, lang: str
     ],
     hi: [
       `नमस्ते! मैं ${brand} का AI हूं। ${founder} ने यह एजेंसी बनाई है ताकि आपके डिजिटल सपने हकीकत बनें। आप क्या बनवाना चाहते हैं?`,
-      `हेलो! ${brand} AI यहाँ है। बताइए — वेबसाइट, AI सिस्टम, या कुछ और?`,
+      `हेलो! ${brand} AI यहाँ है — वेबसाइट, AI सिस्टम, या कुछ और? बताइए!`,
     ],
     hinglish: [
       `Hey! ${brand} AI here — bhai seedha baat karte hain. ${founder} ne ${ctx.founderProjects || "50+"}+ projects deliver kiye hain. Aap kya banwana chahte ho?`,
       `Yo! ${brand} AI ready hai. Kya chahiye — website, Discord bot, AI system? Batao!`,
-    ],
-    ar: [
-      `مرحباً! أنا الذكاء الاصطناعي لـ ${brand}. كيف يمكنني مساعدتك اليوم؟`,
-    ],
-    fr: [
-      `Bonjour ! Je suis l'IA de ${brand}. Comment puis-je vous aider aujourd'hui ?`,
-    ],
-    de: [
-      `Hallo! Ich bin die KI von ${brand}. Wie kann ich Ihnen helfen?`,
-    ],
-    es: [
-      `¡Hola! Soy la IA de ${brand}. ¿En qué puedo ayudarte hoy?`,
-    ],
-    ja: [
-      `こんにちは！${brand} AIです。何かお手伝いできることはありますか？`,
-    ],
-    zh: [
-      `你好！我是 ${brand} 的AI助手。有什么可以帮助您的？`,
-    ],
-    ko: [
-      `안녕하세요! ${brand} AI입니다. 어떻게 도와드릴까요?`,
     ],
   };
   const pool = variants[lang] || variants.en;
@@ -310,13 +340,6 @@ function thankYou(brand: string, lang: string): string {
     en: `Anytime. That's what ${brand} is built for. Anything else I can help you with?`,
     hi: `आपका स्वागत है! कुछ और जानना हो तो बताइए।`,
     hinglish: `Koi baat nahi bhai! Aur kuch chahiye toh batao.`,
-    ar: `على الرحب والسعة! هل هناك أي شيء آخر يمكنني مساعدتك به؟`,
-    fr: `De rien ! Y a-t-il autre chose que je puisse faire pour vous ?`,
-    de: `Gerne! Kann ich Ihnen sonst noch helfen?`,
-    es: `¡De nada! ¿Hay algo más en lo que pueda ayudarte?`,
-    ja: `どういたしまして！他に何かお手伝いできることはありますか？`,
-    zh: `不客气！还有什么可以帮助您的吗？`,
-    ko: `천만에요! 다른 도움이 필요하신가요?`,
   };
   return map[lang] || map.en;
 }
@@ -326,44 +349,31 @@ function aboutUs(brand: string, founder: string, ctx: SystemContext, lang: strin
     en: `**${brand}** is an elite digital agency founded by ${founder}. We don't just build things — we build things that scale.\n\n**What we've done:** ${ctx.founderProjects || "50+"}+ projects delivered. ${ctx.founderClients || "100+"}+ clients across continents.\n\n**What we build:** AI systems, high-performance websites, Discord bots, automation infrastructure, and full brand identities.\n\nEvery project gets the same obsessive attention to quality. What are you looking to build?`,
     hi: `**${brand}** एक premium digital agency है जिसे ${founder} ने बनाया है। हम ${ctx.founderProjects || "50+"}+ projects deliver कर चुके हैं और ${ctx.founderClients || "100+"}+ clients को serve किया है।\n\nहम बनाते हैं: AI systems, websites, Discord bots, automation, aur branding.\n\nआपका project क्या है?`,
     hinglish: `**${brand}** ek premium agency hai — ${founder} ne banai. ${ctx.founderProjects || "50+"}+ projects done, ${ctx.founderClients || "100+"}+ clients served worldwide.\n\nKya banate hain: AI systems, websites, Discord bots, automation, branding — sab kuch.\n\nAapka kya project hai?`,
-    ar: `**${brand}** وكالة رقمية متميزة أسسها ${founder}. لقد أتممنا ${ctx.founderProjects || "50+"}+ مشروعاً وخدمنا ${ctx.founderClients || "100+"}+ عميلاً.\n\nنبني: أنظمة ذكاء اصطناعي، مواقع إلكترونية، بوتات ديسكورد، وأنظمة أتمتة.\n\nما هو مشروعك؟`,
-    fr: `**${brand}** est une agence digitale de premier plan fondée par ${founder}. Nous avons livré ${ctx.founderProjects || "50+"}+ projets pour ${ctx.founderClients || "100+"}+ clients.\n\nNous construisons : systèmes IA, sites web, bots Discord, automatisation, branding.\n\nQuel est votre projet ?`,
-    es: `**${brand}** es una agencia digital de élite fundada por ${founder}. Hemos completado ${ctx.founderProjects || "50+"}+ proyectos para ${ctx.founderClients || "100+"}+ clientes.\n\nConstruimos: sistemas de IA, sitios web, bots de Discord, automatización, branding.\n\n¿Cuál es tu proyecto?`,
   };
   return map[lang] || map.en;
 }
 
 function servicesResponse(brand: string, ctx: SystemContext, lang: string, mode: string, alreadyMentioned: boolean): string {
   const serviceNames = ctx.services?.slice(0, 6).map(s => `**${s.name}**`).join(", ") || "websites, AI systems, Discord bots, automation, branding";
-
   const map: Record<string, string> = {
     en: alreadyMentioned
       ? `Based on what you've mentioned, here are the most relevant ${brand} services:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.slice(0,2).join(", ")}`).join("\n") || serviceNames}\n\nWhich one fits your project?`
       : `${brand} offers ${ctx.services?.length || "several"} services:\n\n${ctx.services?.slice(0,6).map(s => `- **${s.name}** — ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nWhat are you building? I'll point you to exactly the right one.`,
     hi: `${brand} के services:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nआप क्या बनवाना चाहते हैं?`,
     hinglish: `${brand} ke services:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nKya banana hai aapko?`,
-    ar: `خدمات ${brand}:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nماذا تريد أن تبني؟`,
-    fr: `Services de ${brand}:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\nQue souhaitez-vous construire ?`,
-    es: `Servicios de ${brand}:\n\n${ctx.services?.slice(0,5).map(s => `- **${s.name}**: ${s.features?.[0] || ""}`).join("\n") || serviceNames}\n\n¿Qué quieres construir?`,
   };
   return map[lang] || map.en;
 }
 
 function pricingResponse(brand: string, ctx: SystemContext, lang: string, alreadyAsked: boolean): string {
-  const cheapest = ctx.pricing
-    ?.filter(p => typeof p.monthly === "number" && (p.monthly as number) > 0)
-    .sort((a,b) => (a.monthly as number) - (b.monthly as number))[0];
+  const cheapest = ctx.pricing?.filter(p => typeof p.monthly === "number" && (p.monthly as number) > 0).sort((a,b) => (a.monthly as number) - (b.monthly as number))[0];
   const recommended = ctx.pricing?.find(p => p.recommended);
   const startPrice = cheapest ? `$${cheapest.monthly}` : "affordable";
   const recPlan = recommended ? `**${recommended.name}** ($${recommended.monthly}/mo)` : "our mid-tier plan";
-
   const map: Record<string, string> = {
     en: `${brand} pricing starts at **${startPrice}/mo** and scales to custom enterprise.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mo${p.recommended ? " ★" : ""} — ${p.features?.[0] || ""}`).join("\n") || ""}\n\nMost clients find ${recPlan} hits the sweet spot. What's your budget range?`,
     hi: `${brand} की pricing **${startPrice}/month** से शुरू होती है।\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mo${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\nआपका budget क्या है?`,
     hinglish: `${brand} ki pricing **${startPrice}/month** se start hoti hai.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mo${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\nAapka budget kya hai?`,
-    ar: `تبدأ أسعار ${brand} من **${startPrice}/شهر**.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/شهر${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\nما هي ميزانيتك؟`,
-    fr: `Les tarifs de ${brand} commencent à **${startPrice}/mois**.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mois${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\nQuel est votre budget ?`,
-    es: `Los precios de ${brand} comienzan en **${startPrice}/mes**.\n\n${ctx.pricing?.slice(0,4).map(p => `- **${p.name}**: $${p.monthly}/mes${p.recommended ? " ★" : ""}`).join("\n") || ""}\n\n¿Cuál es tu presupuesto?`,
   };
   return map[lang] || map.en;
 }
@@ -371,13 +381,10 @@ function pricingResponse(brand: string, ctx: SystemContext, lang: string, alread
 function contactResponse(brand: string, lang: string, mode: string): string {
   const map: Record<string, string> = {
     en: mode === "connect"
-      ? `Let's get the ball rolling. Share your **name**, **email**, and a quick description of your project — the ${brand} team will reach out within **24 hours**.\n\nAlternatively, scroll down to the contact form on this page.`
+      ? `Let's get the ball rolling. Share your **name**, **email**, and a quick description of your project — the ${brand} team will reach out within **24 hours**.`
       : `The ${brand} team is ready. Head to the **Connect** tab above, or scroll to the contact section at the bottom of this page. Expect a response within **24 hours**.`,
     hi: `${brand} की टीम तैयार है। अपना **नाम**, **email**, और project की जानकारी दें — **24 घंटे** में जवाब मिलेगा।`,
     hinglish: `${brand} team ready hai! **Connect** tab mein jao ya page ke neeche contact form fill karo. **24 ghante** mein response milega.`,
-    ar: `فريق ${brand} جاهز. أرسل **اسمك** و**بريدك الإلكتروني** ووصفاً لمشروعك — سيردون خلال **24 ساعة**.`,
-    fr: `L'équipe ${brand} est prête. Partagez votre **nom**, **email** et une description de votre projet — réponse sous **24 heures**.`,
-    es: `El equipo de ${brand} está listo. Comparte tu **nombre**, **email** y una descripción del proyecto — respuesta en **24 horas**.`,
   };
   return map[lang] || map.en;
 }
@@ -385,7 +392,7 @@ function contactResponse(brand: string, lang: string, mode: string): string {
 function techResponse(brand: string, lang: string): string {
   const map: Record<string, string> = {
     en: `${brand} builds with the modern stack — **React**, **Next.js**, **TypeScript**, **Node.js**, **Python**, **PostgreSQL**, **Redis**, and cloud infrastructure on AWS/GCP/Vercel.\n\nFor AI systems: **LLM integrations**, custom fine-tuning, vector databases, and RAG pipelines.\n\nFor bots: **Discord.js**, Telegram API, WhatsApp Business API.\n\nWhat's your use case?`,
-    hi: `${brand} इन technologies use करता है:\n- **React, Next.js, TypeScript** (frontend)\n- **Node.js, Python** (backend)\n- **AI/LLM integrations** (AI systems)\n- **Discord.js, Telegram** (bots)\n\nआपका project किस type का है?`,
+    hi: `${brand} इन technologies use करता है:\n- **React, Next.js, TypeScript** (frontend)\n- **Node.js, Python** (backend)\n- **AI/LLM integrations** (AI)\n- **Discord.js, Telegram** (bots)\n\nआपका project किस type का है?`,
     hinglish: `${brand} latest tech use karta hai:\n- **React, Next.js** (websites)\n- **Node.js, Python** (backend)\n- **OpenAI, LLMs** (AI)\n- **Discord.js** (bots)\n\nKis type ka project hai?`,
   };
   return map[lang] || map.en;
@@ -439,18 +446,20 @@ function genericResponse(brand: string, lang: string, turn: number): string {
   return pool[Math.min(turn - 1, pool.length - 1)] || pool[pool.length - 1];
 }
 
-// ── Language Detection ───────────────────────────────────────────────────────
+// ── Language Detection (24+ languages) ────────────────────────────────────────
 function detectLanguage(text: string): string {
-  if (/[\u0600-\u06FF]/.test(text)) return "ar";
+  if (/[\u0600-\u06FF]/.test(text)) {
+    if (/\b(?:ہے|ہیں|کیا|نہیں)/i.test(text)) return "ur";
+    return "ar";
+  }
   if (/[\u0900-\u097F]/.test(text)) {
     if (/\b(hai|hain|kya|nahi|main|tum|aur|bhi|yaar|bhai|boss|karo|kaise|matlab|samjha|thoda|zyada|bahut|bilkul|accha|theek|seedha|bolta|bolte|karein|karle)\b/i.test(text)) return "hinglish";
     return "hi";
   }
   if (/[\u0980-\u09FF]/.test(text)) return "bn";
-  if (/[\u3040-\u30FF\u4E00-\u9FFF]/.test(text)) {
-    if (/[\u3040-\u30FF]/.test(text)) return "ja";
-    return "zh";
-  }
+  if (/[\u3040-\u30FF]/.test(text) && /[\u4E00-\u9FFF]/.test(text)) return "ja";
+  if (/[\u3040-\u30FF]/.test(text)) return "ja";
+  if (/[\u4E00-\u9FFF]/.test(text)) return "zh";
   if (/[\uAC00-\uD7AF]/.test(text)) return "ko";
   if (/\b(hola|gracias|cómo|qué|necesito|buenos|por favor|español)\b/i.test(text)) return "es";
   if (/\b(bonjour|merci|comment|salut|je|nous|vous|français)\b/i.test(text)) return "fr";

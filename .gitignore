@@ -47,3 +47,11 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Environment (contains API keys — NEVER commit)
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel
