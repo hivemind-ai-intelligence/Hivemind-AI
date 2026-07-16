@@ -9,7 +9,7 @@
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
-  "installCommand": "npm install -g pnpm@10 && pnpm install --no-frozen-lockfile",
+  "installCommand": "npm install -g pnpm@10 && pnpm install --force --no-frozen-lockfile",
   "buildCommand": "pnpm run build && cp -r dist ../../",
   "outputDirectory": "dist"
 }
