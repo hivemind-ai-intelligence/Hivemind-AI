@@ -223,6 +223,35 @@ export default function AIChat() {
     mode: activeMode,
   }), [data, activeMode]);
 
+  // ── Direct OpenRouter call (bypasses backend) ─────────────────────────
+  const callOpenRouterDirect = useCallback(async (history: Message[]): Promise<{ content: string; mode?: string }> => {
+    const apiKey = (import.meta as any).env?.VITE_OPENROUTER_API_KEY || "";
+    if (!apiKey) throw new Error("No VITE_OPENROUTER_API_KEY");
+    const ctx = buildContext();
+    const brand = ctx.brandName || "Hivemind AI";
+    const chat = [
+      { role: "system", content: `You are the ${brand} AI assistant. ${ctx.founderName || "The founder"} built this agency. ${ctx.founderProjects || "50+"}+ projects, ${ctx.founderClients || "100+"}+ clients. Be helpful, concise, professional. Respond in the user's language.` },
+      ...history.filter(m => !m.error).map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content }))
+    ];
+    const models = ["google/gemini-2.5-flash-preview-09-2025:free", "meta-llama/llama-4-maverick:free", "deepseek/deepseek-r1:free", "meta-llama/llama-3.3-70b-instruct:free"];
+    let lastErr: any;
+    for (const model of models) {
+      try {
+        const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}`, "HTTP-Referer": "https://hivemind.ai", "X-Title": "Hivemind AI" },
+          body: JSON.stringify({ model, messages: chat, max_tokens: 400, temperature: 0.72 }),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!r.ok) { lastErr = new Error(`HTTP ${r.status}`); continue; }
+        const d = await r.json();
+        const c = d.choices?.[0]?.message?.content;
+        if (c) return { content: c, mode: "online" };
+      } catch (e: any) { lastErr = e; }
+    }
+    throw lastErr || new Error("All OpenRouter models failed");
+  }, [buildContext]);
+
   // Call AI backend
   const callAI = useCallback(async (history: Message[]): Promise<{ content: string; mode?: string }> => {
     const apiMessages = history
@@ -293,8 +322,18 @@ export default function AIChat() {
       // user is never left without a reply. We surface this as "Smart
       // Fallback" rather than a hard offline state, since the AI is still
       // responding.
-      setAiStatus("fallback");
-      const fallback = localFallback(text, data.brandName);
+      // Try direct OpenRouter as last resort
+      let fallback: string;
+      try {
+        const directResult = await callOpenRouterDirect(updatedHistory);
+        setAiStatus("online");
+        const aiMsgDirect: Message = { id: (Date.now() + 1).toString(), role: "ai", content: directResult.content };
+        setConversations(prev => ({ ...prev, [activeMode]: [...updatedHistory, aiMsgDirect] }));
+        return;
+      } catch (_directErr) {
+        setAiStatus("fallback");
+        fallback = localFallback(text, data.brandName);
+      }
       setConversations(prev => ({
         ...prev,
         [activeMode]: [
@@ -306,10 +345,10 @@ export default function AIChat() {
       setIsTyping(false);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [inputValue, isTyping, currentMessages, activeMode, callAI, data.brandName]);
+  }, [inputValue, isTyping, currentMessages, activeMode, callAI, callOpenRouterDirect, data.brandName]);
 
   const clearChat = useCallback(() => {
-    const mode = MODES.find(m => m.id === activeMode)!;
+    const mode = MODES.find(m => m.id === activeMode!);
     setConversations(prev => ({
       ...prev,
       [activeMode]: [{ id: Date.now().toString(), role: "ai", content: mode.welcome }],
@@ -483,7 +522,7 @@ export default function AIChat() {
 
                   {/* Bubble */}
                   <div
-                    className={`px-4 py-3 rounded-2xl text-sm leading-relaxed max-w-full ${
+                    className={``px-4 py-3 rounded-2xl text-sm leading-relaxed max-w-full ${
                       msg.role === "user"
                         ? "rounded-tr-md text-white/80"
                         : "rounded-tl-md text-white/75"
@@ -603,7 +642,7 @@ export default function AIChat() {
   );
 }
 
-// ── Local fallback (when API is unreachable) ──────────────────────────────────
+// ── Local fallback (when API is unreachable) ──────────────────────────────────────────────────
 function localFallback(input: string, brand: string): string {
   const lower = input.toLowerCase();
   if (/^(hi|hey|hello|hola|bonjour|hallo|namaste|नमस्ते|こんにちは|你好|안녕|مرحبا|ciao|привет)/i.test(input.trim()))
