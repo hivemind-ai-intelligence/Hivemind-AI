@@ -1,16 +1,17 @@
 {
   "functions": {
-    "api/**/*.ts": {
+    "api/[...path].ts": {
       "runtime": "@vercel/node@3",
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 512
     }
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
-  "buildCommand": "cd artifacts/hivemind && npm install && npm run build",
-  "outputDirectory": "artifacts/hivemind/dist",
   "installCommand": "npm install -g pnpm@10 && pnpm install --no-frozen-lockfile",
+  "buildCommand": "cd artifacts/hivemind && pnpm run build",
+  "outputDirectory": "artifacts/hivemind/dist",
   "framework": null
 }
