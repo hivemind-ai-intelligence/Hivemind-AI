@@ -10,6 +10,6 @@
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "installCommand": "npm install -g pnpm@10 && pnpm install --no-frozen-lockfile",
-  "buildCommand": "ROOT=$(pwd) && pnpm --filter @workspace/hivemind run build && cp -r \"$ROOT/artifacts/hivemind/dist\" $ROOT/",
+  "buildCommand": "pnpm run build && cp -r dist ../../",
   "outputDirectory": "dist"
 }
